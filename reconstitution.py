@@ -1,3 +1,4 @@
+import librosa
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
@@ -5,7 +6,7 @@ from signal_test import signal_test, plot_time_frequencies_reference
 from dual_frame import compute_dual_window
 from config import*
 
-min_time = 0
+min_time = 0.0
 max_time = 1.0
 duration = max_time - min_time
 
@@ -13,9 +14,9 @@ duration = max_time - min_time
 # Charger le fichier MP3w
 # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
 # chemin_fichier = "TERTrace/python/kawaki_wo_ameku.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_piano.mp3"
+chemin_fichier = "TERTrace/python/kawaki_wo_ameku_piano.mp3"
 # signal, sr = librosa.load(chemin_fichier, sr=None)
-# signal, sr = librosa.load(chemin_fichier, sr=1500)
+# signal, sr = librosa.load(chemin_fichier, sr=500)
 
 
 signal, sr = signal_test, len(signal_test) # ref
@@ -40,11 +41,11 @@ def plot_signal(signal, ax_index):
     axes[ax_index].margins(0, x=None, y=None, tight=True)
 
 def ft(signal):
-    N = len(signal) # nombre d'échantillons
-    n = np.arange(N) # indices (somme sur n)
-    result = np.zeros(N, dtype=np.complex64)
-    for k in range(N):
-        result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / N))
+    L = len(signal) # nombre d'échantillons
+    n = np.arange(L) # indices (somme sur n)
+    result = np.zeros(L, dtype=np.complex64)
+    for k in range(L):
+        result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / L))
     return result
 
 def fft(signal):
@@ -53,11 +54,11 @@ def fft(signal):
 
 def fstdft(signal, window=lambda t: 1):
     window = discretize_window(window=window)
-    N = len(signal)
-    result = np.zeros((N, N), dtype=np.complex64)
-    for i in range(N):
-        translated_window = np.ones(N)
-        for k in range(N):
+    L = len(signal)
+    result = np.zeros((L, L), dtype=np.complex64)
+    for i in range(L):
+        translated_window = np.ones(L, dtype=np.complex64)
+        for k in range(L):
             t = k
             translated_window[k] = window[t - i]
         result[i] = fft(signal * np.conjugate(translated_window))
@@ -118,19 +119,22 @@ def plot_fft(signal, ax_index, module_only = False):
         axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
 
 
-def plot_fstdft(signal, ax_index, window, plot_ref=True, label=""):
+def plot_fstdft(signal, ax_index, window, plot_ref=True, label="", tolerance=-1, linear=False):
     print("Calcul de la FSTDFT...")
     result_raw = fstdft(signal=signal, window=window)
     
     
     result = result_raw[:L//2,:]
-    result = np.abs(result)**2
-    # result = np.abs(result)
-    # result = 10*np.abs(result)
+    if linear:
+        result = np.abs(result)
+    else:
+        result = np.abs(result)**2
     result /= np.max(result) if np.max(result) != 0 else 1
     
-    
-    result[result < 0.005] = 0
+    if tolerance >= 0:
+        result[result < tolerance] = 0
+    else:
+        result[result < 0.005] = 0
     nonzero_y, nonzero_x = np.nonzero(result)
     
     if len(nonzero_y) == 0:
@@ -197,7 +201,9 @@ def plot_scipy_fstdft(signal, ax_index, window=None): ## SCIPY
 
 def plot_window(window, ax_index, label=""):
     axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.real(window), color='blue', alpha=0.7, linewidth=0.7)
-    axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=0.7)
+    imag = np.imag(window)
+    if (imag > 0.0).any():
+        axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=0.7)
     # axes[ax_index].set_xlabel("Progression")
     # axes[ax_index].set_ylabel("Amplitude")
     axes[ax_index].grid(True, alpha=0.3)
@@ -263,58 +269,64 @@ def get_max_indexes(coefs, num_max_indexes):
 
 
 
-
-
-fig, axes = plt.subplots(6, 1, figsize=(14, 10)) ## changer 1er argument accordement
-
-
-plot_signal(signal, ax_index=0)
-result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=False)
-# plot_scipy_fstdft(signal, ax_index=2, window=window) ## je n'arrive pas à le faire fonctionner correctement..
-# plot_dft(signal, ax_index=2, module_only=True)
-# plot_fft(signal, ax_index=2, module_only=True)
-
-plot_window(discretize_window(window, True), ax_index=4, label="Fenêtre")
+if __name__ == "__main__":
+    fig, axes = plt.subplots(6, 1, figsize=(14, 10)) ## changer 1er argument accordement
+    # fig, axes = plt.subplots(3, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [1,4,1]}) ## changer 1er argument accordement
 
 
 
-d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
-reconstructed_signal = reconstruct_signal(result, discretize_window(window), d_dual_window, alpha, beta)
-plot_signal(reconstructed_signal, 2)
+    plot_signal(signal, ax_index=0)
+    # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True, tolerance=0.02) ## pour indicatrice
+    # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=False, tolerance=0, linear=True)
+    result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True)
+
+
+    # plot_scipy_fstdft(signal, ax_index=2, window=window) ## je n'arrive pas à le faire fonctionner correctement..
+    # plot_dft(signal, ax_index=2, module_only=True)
+    # plot_fft(signal, ax_index=2, module_only=True)
+
+    plot_window(discretize_window(window, True), ax_index=4, label="Fenêtre")
 
 
 
-
-
-## pour la visualisation
-dual_window_vis = d_dual_window.copy()
-dual_window_vis[:L//2] = d_dual_window[L//2:]
-dual_window_vis[L//2:] = d_dual_window[:L//2]
-plot_window(dual_window_vis, ax_index=5, label="Fenêtre duale")
-
-
-## plot grille alphaZ x betaZ
-x = np.arange(0, L, alpha)/L
-y = np.arange(0, L, beta)
-X, Y = np.meshgrid(x, y)
-X_flat = X.flatten()
-Y_flat = Y.flatten()
-axes[1].scatter(X_flat, Y_flat, marker='+', color='orange', alpha=0.8)
-
-
-
-plot_fstdft(reconstructed_signal, ax_index=3, window=window, plot_ref=False, label="STFT du signal reconstruit")
+    d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    reconstructed_signal = reconstruct_signal(result, discretize_window(window), d_dual_window, alpha, beta)
+    plot_signal(reconstructed_signal, 2)
 
 
 
 
-## finish the plot and save
-plt.get_current_fig_manager().window.state('zoomed')
-plt.tight_layout()
 
-# plt.savefig('plot.pdf', bbox_inches='tight')  # Format vectoriel
-plt.savefig('signal_temporel.jpg', dpi=300)
-# plt.show()
+    ## pour la visualisation
+    dual_window_vis = d_dual_window.copy()
+    dual_window_vis[:L//2] = d_dual_window[L//2:]
+    dual_window_vis[L//2:] = d_dual_window[:L//2]
+    plot_window(dual_window_vis, ax_index=5, label="Fenêtre duale")
+
+
+    ## plot grille alphaZ \times betaZ
+    x = np.arange(0, L, alpha)/L
+    y = np.arange(0, L, beta)
+    X, Y = np.meshgrid(x, y)
+    X_flat = X.flatten()
+    Y_flat = Y.flatten()
+    axes[1].scatter(X_flat, Y_flat, marker='+', color='orange', alpha=0.8)
+
+
+
+    plot_fstdft(reconstructed_signal, ax_index=3, window=window, plot_ref=False, label="STFT du signal reconstruit")
+    # plot_fstdft(reconstructed_signal, ax_index=3, window=window, plot_ref=False, label="STFT du signal reconstruit", tolerance=0.08)
+
+
+
+
+    ## finish the plot and save
+    plt.get_current_fig_manager().window.state('zoomed')
+    plt.tight_layout()
+
+    # plt.savefig('plot.pdf', bbox_inches='tight')  # inutilisé
+    plt.savefig('signal_temporel.jpg', dpi=300)
+    # plt.show()
 
 
 

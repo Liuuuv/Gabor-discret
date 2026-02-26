@@ -16,9 +16,9 @@ chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
 signal, sr = signal_test, len(signal_test)
 
 time = np.arange(min_time, max_time, 1/sr)
-# signal = np.sin(2 * np.pi * 200 * time)
+signal = np.sin(2 * np.pi * 10 * time)
 
-signal = signal[:int(sr * max_time)]
+# signal = signal[:int(sr * max_time)]
 
 
 
@@ -33,11 +33,11 @@ def plot_signal(signal, ax_index):
     axes[ax_index].margins(0, x=None, y=None, tight=True)
 
 def ft(signal):
-    N = len(signal) # nombre d'échantillons
-    n = np.arange(N) # indices (somme sur n)
-    result = np.zeros(N, dtype=np.complex64)
-    for k in range(N):
-        result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / N))
+    L = len(signal) # nombre d'échantillons
+    n = np.arange(L) # indices (somme sur n)
+    result = np.zeros(L, dtype=np.complex64)
+    for k in range(L):
+        result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / L))
     return result
 
 def fft(signal):
@@ -71,6 +71,7 @@ def plot_dft(signal, ax_index, module_only = False):
         axes[ax_index].plot(freq, np.real(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
     axes[ax_index].set_xscale('log')
     axes[ax_index].set_title("DFT")
+    axes[ax_index].grid()
     axes[ax_index].set_xlabel("Fréquence")
     if module_only:
         axes[ax_index].set_ylabel("Module")
@@ -172,14 +173,13 @@ def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l
 
 
 
-fig, axes = plt.subplots(3, 1, figsize=(14, 10)) ## changer ça accordement
+fig, axes = plt.subplots(2, 1, figsize=(14, 10)) ## changer ça accordement
 
 plot_signal(signal, 0)
-# plot_dft(signal, ax_index=1, module_only=True)
-plot_fstdft(signal, ax_index=1)
+plot_dft(signal, ax_index=1, module_only=True)
+# plot_fstdft(signal, ax_index=1)
 # plot_scipy_fstdft(signal, ax_index=1)
-plot_fft(signal, ax_index=2, module_only=True)
-
+# plot_fft(signal, ax_index=1, module_only=True)
 
 plt.get_current_fig_manager().window.state('zoomed')
 plt.tight_layout()
