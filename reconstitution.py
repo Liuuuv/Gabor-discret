@@ -4,6 +4,7 @@ import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from dual_frame import compute_dual_window
+from zak import compute_alternate_dual_window, zak_transform
 from config import*
 
 min_time = 0.0
@@ -30,15 +31,20 @@ L = len(signal)
 
 
 
-def plot_signal(signal, ax_index):
+def plot_signal(signal, ax_index, custom_y_lim=0.0, label="", color='blue'):
     # temps = np.arange(len(signal)) / sr
     temps = np.linspace(min_time, max_time, len(signal))
-    axes[ax_index].plot(temps, signal, color='blue', alpha=0.7, linewidth=0.5)
-    axes[ax_index].set_title(f"Fréquence d'échantillonnage: {sr}")
+    axes[ax_index].plot(temps, signal, color=color, alpha=0.7, linewidth=0.8)
+    if label == "":
+        axes[ax_index].set_title(f"Fréquence d'échantillonnage: {sr}")
+    else:
+        axes[ax_index].set_title(label)
     axes[ax_index].set_xlabel("Progression")
     axes[ax_index].set_ylabel("Amplitude")
     axes[ax_index].grid(True, alpha=0.3)
     axes[ax_index].margins(0, x=None, y=None, tight=True)
+    if custom_y_lim:
+        axes[ax_index].set_ylim(-custom_y_lim, custom_y_lim)
 
 def ft(signal):
     L = len(signal) # nombre d'échantillons
@@ -55,9 +61,9 @@ def fft(signal):
 def fstdft(signal, window=lambda t: 1):
     window = discretize_window(window=window)
     L = len(signal)
-    result = np.zeros((L, L), dtype=np.complex64)
+    result = np.zeros((L, L), dtype=np.complex128)
     for i in range(L):
-        translated_window = np.ones(L, dtype=np.complex64)
+        translated_window = np.ones(L, dtype=np.complex128)
         for k in range(L):
             t = k
             translated_window[k] = window[t - i]
@@ -66,16 +72,16 @@ def fstdft(signal, window=lambda t: 1):
 
 def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: int=1):
     N = coefs.shape[0]
-    signal = np.zeros(N, dtype=np.complex64)
+    signal = np.zeros(N, dtype=np.complex128)
     if dual_window is None:
         dual_window = window
     for n in range(N):
         for k in np.arange(0, N, alpha):
             l = np.arange(0, N, beta)
             tm_dual = dual_window[n - k] * np.exp(1j * 2 * np.pi * (n/N) * l)
-            signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex64)
+            signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
     # print("produit scalaire", np.sum(np.conjugate(window[x])*dual_window[x] for x in np.arange(N)))
-    # signal /= N * np.sum(np.conjugate(window[x]) * dual_window[x] for x in np.arange(N)) + 10e-8
+    # signal /= N * np.sum(np.conjugate(window[x]) * dual_window[x] for x in np.arange(N)) + 10e-12
     return signal
 
     
@@ -209,6 +215,7 @@ def plot_window(window, ax_index, label=""):
     axes[ax_index].grid(True, alpha=0.3)
     axes[ax_index].margins(0, x=None, y=None, tight=True)
     
+    
     # axes[ax_index].plot(np.linspace(-0.5,0.5,L), discretize_window(window, True))
     axes[ax_index].set_title(label)
 
@@ -274,8 +281,8 @@ if __name__ == "__main__":
     # fig, axes = plt.subplots(3, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [1,4,1]}) ## changer 1er argument accordement
 
 
-
-    plot_signal(signal, ax_index=0)
+    y_lim = 2.5
+    plot_signal(signal, ax_index=0, custom_y_lim=y_lim)
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True, tolerance=0.02) ## pour indicatrice
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=False, tolerance=0, linear=True)
     result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True)
@@ -285,13 +292,41 @@ if __name__ == "__main__":
     # plot_dft(signal, ax_index=2, module_only=True)
     # plot_fft(signal, ax_index=2, module_only=True)
 
+    
+    
     plot_window(discretize_window(window, True), ax_index=4, label="Fenêtre")
 
 
 
-    d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    # d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    d_dual_window = compute_alternate_dual_window(d_window)
+    
+    # test = np.zeros(L, np.complex128)
+    # k = 10
+    # n = 2
+    
+    # J = np.arange(alpha)
+    # NU = np.arange(alpha_t)
+    # zak = np.zeros((alpha, alpha_t), dtype=np.complex128)
+    # for j in J:
+    #     for nu in NU:
+    #         zak[j, nu] = zak_transform(d_window, j, nu)
+    
+    # n += alpha_t//q
+    # l_0 = (n//beta)
+    # nu_0: int = n - l_0 * beta
+    # for j in np.arange(L):
+    #     if j%alpha != k:
+    #         continue
+    #     l = j//alpha
+    #     test[j] = - (1/alpha_t) * (np.conjugate(zak[j%alpha,n]) / np.conjugate(zak[j%alpha,nu_0])) * np.exp(2j * np.pi *l * (nu_0) / alpha_t) + (1/alpha_t) * np.exp(2j * np.pi *l * n / alpha_t)
+    
+    # d_dual_window = test + compute_dual_window(window, alpha=alpha, beta=beta)
+    
+    
+    # d_dual_window /= 10
     reconstructed_signal = reconstruct_signal(result, discretize_window(window), d_dual_window, alpha, beta)
-    plot_signal(reconstructed_signal, 2)
+    plot_signal(reconstructed_signal, ax_index=2, custom_y_lim=y_lim)
 
 
 
@@ -327,6 +362,12 @@ if __name__ == "__main__":
     # plt.savefig('plot.pdf', bbox_inches='tight')  # inutilisé
     plt.savefig('signal_temporel.jpg', dpi=300)
     # plt.show()
+    
+    
+    plt.close()
+    fig, axes = plt.subplots(2, 1, figsize=(7, 5)) ## changer 1er argument accordement
+    plot_signal(np.abs(signal - reconstructed_signal), ax_index=0, label="Erreur", color='red')
+    plt.show()
 
 
 

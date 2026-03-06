@@ -8,24 +8,26 @@
 
 from signal_test import signal_test
 import numpy as np
+import matplotlib.pyplot as plt
 
 ############# WINDOWS #############
-def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de taille donnée)
+def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de largeur donnée)
     assert length > 0
     
     def ind(t_):
         if type(t_) is np.ndarray:
             t = t_.copy()
             for i in range(len(t)):
-                t[i] = 1/np.sqrt(length) if abs(t[i]) < length/2 else 0
+                t[i] = 1/np.sqrt(2*length) if abs(t[i]) <= length else 0
             return t
         else:
-            return 1/np.sqrt(length) if abs(t_) < length/2 else 0
+            return 1/np.sqrt(2*length) if abs(t_) <= length else 0
     return ind
 
 def gaussian(sigma: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de taille donnée)
     assert sigma > 0
     return lambda t: np.exp(-np.pi*(t/sigma)**2) / sigma
+    # return lambda t: np.exp(-np.pi*(t/sigma)**2) / sigma
 
 def gaussian_comp_supp(sigma: float):
     assert sigma > 0
@@ -90,8 +92,10 @@ L_sampling = np.arange(0, L, dtype=np.complex64)
 L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex64)
 
 
-alpha: int = 5
-beta: int = 25
+# alpha: int = 10
+# beta: int = 25
+alpha: int = 20
+beta: int = 5
 beta_t = L//beta
 alpha_t = L//alpha
 
@@ -108,8 +112,9 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 
 
 
-# window = ind_zero(0.4)
-sigma = 0.08
+# window = ind_zero(0.15)
+# sigma = 0.1999999955
+sigma = 0.2
 window = gaussian(sigma)
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)
@@ -120,6 +125,7 @@ d_window = discretize_window(window)
 print()
 print("--------- BEGIN VERIFICATIONS config.py ---------")
 print("L:", L, "; alpha:", alpha, "; beta:", beta, "; alpha*beta:", alpha*beta)
+print("alpha_tilde", alpha_t, "; beta_tilde:", beta_t, "; alpha_tilde*beta_tilde:", alpha_t*beta_t)
 if L % beta != 0:
     print("BETA NE DIVISE PAS L")
 elif L % alpha != 0:
@@ -143,3 +149,34 @@ print("--------- END VERIFICATIONS config.py -----------")
 print()
 ######## END VERIFICATIONS ##########
 
+
+
+if __name__ == "__main__":
+    pass
+    # for r in range(alpha_t):
+    #     sums = np.zeros(alpha)
+    #     for j in range(alpha):
+            
+            
+    #         for k in range(beta_t):
+                
+    #             midsum = 0
+    #             for l in range(alpha_t):
+    #                 midsum = np.exp(-2 * ( (j - alpha * l + k * beta_t)**2)/(L**2 * sigma**2))
+                
+    #             sums[j] += beta_t * np.exp(-2j * np.pi * r * k / beta) * midsum
+
+    #     # print(f"j = {j}", sums)
+        
+    #     plt.plot(np.arange(alpha)[40:], sums[40:])
+    
+    # plt.show()
+    
+    
+            
+    
+    
+    
+    
+    
+    
