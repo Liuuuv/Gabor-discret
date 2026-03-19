@@ -6,35 +6,17 @@ import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from config import*
 from dual_frame import compute_dual_window, compute_tight_frame, construct_operator_matrix, plot_window
+from zak_tools import*
+from base_orth import build_xi
 
 
-def zak_transform(d_window, j, nu):
-    l = np.arange(0, alpha_t)
-    return np.sum(d_window[j - alpha * l] * np.exp(1j*(2*np.pi/alpha_t) * nu * l), dtype=np.complex128)
 
 
-def zak_transform_fast(d_window): ## BIEN? OUI MAIS CA MARCHE?
-    """Version vectorisée de la transformée de Zak"""
-    L = len(d_window)
-    alpha_t = L // alpha
-    
-    # Reshape en matrice (alpha, alpha_t)
-    signal_matrix = d_window.reshape(alpha, alpha_t, order='F')
-    
-    # FFT sur les colonnes
-    zak = np.fft.fft(signal_matrix, axis=1)
-    
-    return zak
 
-def zak_inverse(zak): ## zak sur alpha, alpha_t
-    vec = np.zeros(L, np.complex64)
-    for n in np.arange(L):
-        for nu in np.arange(alpha_t):
-            phase = np.exp(2j * np.pi * nu * (n//alpha) / alpha_t)
-            vec[n] += (1/alpha_t) * zak[n%alpha,nu] * phase
-    return vec
+
 
 def compute_alternate_dual_window_orth(d_window):
+    print("Computing alternate dual window")
     J = np.arange(alpha)
     NU = np.arange(alpha_t)
     
@@ -71,8 +53,9 @@ def compute_alternate_dual_window_orth(d_window):
     
     
     # print(zak_gamma)
-    # choices[:,:] = -zak_canonical[:,alpha_t//q:]
-    choices[:,7] = .01
+    # choices[:,:] = -0.25*zak_canonical[:,alpha_t//q:]
+    # choices[5,1] = 1
+    choices[:,5] = 1
     zak_gamma[:,alpha_t//q:] = choices[:,:]
     ################ choix ################
     
@@ -84,10 +67,10 @@ def compute_alternate_dual_window_orth(d_window):
             # zak_gamma[j, nu] = - choice * np.conjugate(zak_g[j, nu - alpha_t//2] / zak_g[j,nu]) ## q=2, bandes
             l = np.arange(1,q)
             zak_gamma[j, nu] = (-1 / np.conjugate(zak_g[j,nu])) * np.sum(choices[j, nu + (l-1) * alpha_t//q] * np.conjugate(zak_g[j, nu + l * alpha_t//q]))
-
+    
     return zak_inverse(zak_gamma)
 
-def compute_alternate_dual_window(d_window, canonical_dual=None):
+def compute_alternate_dual_window(d_window, canonical_dual=None): ## passe par la zak inverse
     if canonical_dual is None:
         canonical_dual = compute_dual_window(d_window)
     
@@ -116,6 +99,7 @@ def dual_dir_base_vec(k, n):
         test[j] = - (1/alpha_t) * (np.conjugate(zak[j%alpha,n]) / np.conjugate(zak[j%alpha,nu_0])) * np.exp(2j * np.pi *l * (nu_0) / alpha_t) + (1/alpha_t) * np.exp(2j * np.pi *l * n / alpha_t)
     
     return test
+
 
 # def plot_zak_transform(d_window, ax, label="") -> np.ndarray:
 #     result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
@@ -147,7 +131,10 @@ def dual_dir_base_vec(k, n):
 #     ax.set_title(label)
 #     return result_raw
 
-def plot_zak_transform(d_window, ax, label=""):
+def plot_zak_transform(d_window, ax, label="", bars=False):
+    if bars:
+        return plot_zak_transform_bars(d_window, ax, label="")
+    print("Plotting zak transform", label)
     J = np.arange(alpha)
     NU = np.arange(alpha_t)
     
@@ -155,6 +142,7 @@ def plot_zak_transform(d_window, ax, label=""):
     for j in J:
         for nu in NU:
             result_raw[j, nu] = zak_transform(d_window, j, nu)
+    
     
     result = result_raw.copy()
     
@@ -171,6 +159,54 @@ def plot_zak_transform(d_window, ax, label=""):
     norm_phase = (phase + np.pi) / (2 * np.pi)  # entre 0 et 1
     
     surf = ax.plot_surface(J, NU, Z, facecolors=plt.cm.hsv(norm_phase), alpha=0.9)
+    
+    ax.set_xlabel("j")
+    ax.set_ylabel("nu")
+    ax.set_zlabel("Module")
+    ax.set_title(f"{label}")
+    
+    # Barre de couleur pour la phase
+    mappable = plt.cm.ScalarMappable(cmap=plt.cm.hsv)
+    mappable.set_array(phase)
+    plt.colorbar(mappable, ax=ax, label="Phase [rad]")
+    
+    return result_raw
+
+
+def plot_zak_transform_bars(d_window, ax, label=""):
+    print("Plotting zak transform (bars)", label)
+    J = np.arange(alpha)
+    NU = np.arange(alpha_t)
+    
+    # Calcul de la transformée de Zak
+    result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
+    for j in J:
+        for nu in NU:
+            result_raw[j, nu] = zak_transform(d_window, j, nu)
+    
+    # Module (hauteur des barres)
+    Z = np.abs(result_raw)
+    # Phase (pour la couleur)
+    phase = np.angle(result_raw)
+    
+    # Préparation des coordonnées pour bar3d
+    # On veut une barre pour chaque couple (j, nu)
+    xpos, ypos = np.meshgrid(J, NU, indexing='ij')
+    xpos = xpos.ravel()  # position x (j)
+    ypos = ypos.ravel()  # position y (nu)
+    zpos = np.zeros_like(xpos)  # base des barres à z=0
+    
+    # Largeur et profondeur des barres (ajustables)
+    dx = 0.8 * np.ones_like(xpos)
+    dy = 0.8 * np.ones_like(ypos)
+    dz = Z.ravel()  # hauteur des barres
+    
+    # Couleur basée sur la phase normalisée entre 0 et 1
+    norm_phase = (phase.ravel() + np.pi) / (2 * np.pi)
+    colors = plt.cm.hsv(norm_phase)
+    
+    # Tracé des barres
+    ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color=colors, alpha=0.9, shade=True)
     
     ax.set_xlabel("j")
     ax.set_ylabel("nu")
@@ -219,52 +255,84 @@ def A_p_eq_1(d_window, j, nu): ## à constante près, corriger
 
 if __name__ == "__main__":
     fig = plt.figure(figsize=(16, 10))
+    windows = (1,3) ## CHANGER ACCORDEMENT
+    
     # gs = fig.add_gridspec(4, 1, height_ratios=[2, 2, 2, 2])
-    plt.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0.1, hspace=0.1)
+    plt.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0.2, hspace=0.1)
     # fig.canvas.manager.full_screen_toggle()  # Mode plein écran
     plt.get_current_fig_manager().window.state('zoomed')
-    windows = (1,4)
     
+    
+    
+    # d_window = compute_tight_frame(d_window)[1]
+    
+    dual_window = compute_dual_window(d_window)
     ax3d = fig.add_subplot(*windows, 1, projection='3d')
-    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre")
+    # zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False)
+    zak = plot_zak_transform(dual_window, ax3d, label="Fenêtre duale", bars=False)
     # plot_A(d_window, ax3d)
+    
+    
+    
+    # xi = build_xi()
+    # test = np.zeros(L, dtype=np.complex64)
+    # for j in range(alpha):
+    #     for nu in range(alpha_t - beta):
+    #         t = nu/(alpha_t - beta)
+    #         t = (1-t) * np.pi/2 + t
+    #         t *= (alpha_t - beta)
+    #         # test += np.exp(2j * np.pi * t / alpha_t) * dual_dir_base_vec(j, 5)
+    #         test += np.exp(2j * np.pi * t / alpha_t) * xi[(j, beta+5)]
+    #         # test += np.exp(2j * np.pi * nu / alpha_t) * dual_dir_base_vec(j, 9)
+    # test = dual_dir_base_vec(0, 5)
     
     
     
     
     
     ax3d = fig.add_subplot(*windows, 2, projection='3d')
-    dual_window = compute_dual_window(d_window)
-    plot_zak_transform(dual_window, ax3d, label="duale canonique")
+    # dual_window = compute_dual_window(d_window)
+    alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
+    # plot_zak_transform(dual_window, ax3d, label="duale canonique")
+    plot_zak_transform(alternate_dual_window_orth, ax3d, label="\delta = 1")
+    # plot_zak_transform(test, ax3d, label="test")
+    
+    
+    
     
     ax3d = fig.add_subplot(*windows, 3, projection='3d')
+    from methode_iterative import approximate_compact_support_iter
+    approximate = approximate_compact_support_iter(0.1, 25)
+    plot_zak_transform(approximate, ax3d, label="approximate")
+    
+    
+    
+    # ax3d = fig.add_subplot(*windows, 3, projection='3d')
     # dual_window = compute_dual_window(d_window)
     alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
     alternate_dual_window = dual_window + alternate_dual_window_orth
     
-    plot_zak_transform(alternate_dual_window_orth, ax3d, label="duale orth")
+    # plot_zak_transform(alternate_dual_window_orth, ax3d, label="Duale dans K^\perp")
     
     
-    ax3d = fig.add_subplot(*windows, 4, projection='3d')
-    plot_zak_transform(alternate_dual_window, ax3d, label="duale non canonique")
+    # ax3d = fig.add_subplot(*windows, 4, projection='3d')
+    # plot_zak_transform(alternate_dual_window, ax3d, label="duale non canonique")
     
     
     fig, axes = plt.subplots(5, 1, figsize=(7, 5))
-    plot_window(d_window, axes[0], "Fenetre")
+    plot_window(d_window, axes[0], label="Fenêtre")
     lim = max(np.min(np.abs(dual_window)), np.max(np.abs(dual_window)))
-    plot_window(dual_window, axes[1], "canonical dual window", custom_y_lim=lim)
-    plot_window(alternate_dual_window, axes[2], "alternate_dual_window",)
+    plot_window(dual_window, axes[1], label="canonical dual window", custom_y_lim=lim)
+    plot_window(alternate_dual_window, axes[2], label="alternate_dual_window",)
     orth = compute_alternate_dual_window_orth(d_window)
-    plot_window(orth, axes[3], "orth",)
+    plot_window(orth, axes[3], label="",)
     # test = np.zeros(L, dtype=np.complex64)
     # for j in range(alpha):
     #     test += .01 * dual_dir_base_vec(j, 10)
     # plot_window(test, axes[3], "orth",)
     
-    test = np.zeros(L, dtype=np.complex64)
-    for j in range(alpha):
-        test += .01 * dual_dir_base_vec(j, 19)
-    plot_window(test, axes[4], "test")
+    
+    # plot_window(test, axes[4], label="test")
     
     
     # test = np.zeros(L, np.complex128)
@@ -285,8 +353,7 @@ if __name__ == "__main__":
     
     
     
-    # ax3d = fig.add_subplot(*windows, 4, projection='3d')
-    # plot_zak_transform(test, ax3d, label="test")
+    
     
     
     

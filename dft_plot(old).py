@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
+from tools import*
 
 min_time = 0.0
 max_time = 1.0

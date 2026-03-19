@@ -4,7 +4,10 @@ import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from dual_frame import compute_dual_window
-from zak import compute_alternate_dual_window, zak_transform
+from zak import compute_alternate_dual_window, zak_transform, dual_dir_base_vec
+from base_orth import approximate_window_from_dual_dir
+from base_orth import build_xi
+from tools import*
 from config import*
 
 min_time = 0.0
@@ -31,20 +34,7 @@ L = len(signal)
 
 
 
-def plot_signal(signal, ax_index, custom_y_lim=0.0, label="", color='blue'):
-    # temps = np.arange(len(signal)) / sr
-    temps = np.linspace(min_time, max_time, len(signal))
-    axes[ax_index].plot(temps, signal, color=color, alpha=0.7, linewidth=0.8)
-    if label == "":
-        axes[ax_index].set_title(f"Fréquence d'échantillonnage: {sr}")
-    else:
-        axes[ax_index].set_title(label)
-    axes[ax_index].set_xlabel("Progression")
-    axes[ax_index].set_ylabel("Amplitude")
-    axes[ax_index].grid(True, alpha=0.3)
-    axes[ax_index].margins(0, x=None, y=None, tight=True)
-    if custom_y_lim:
-        axes[ax_index].set_ylim(-custom_y_lim, custom_y_lim)
+
 
 def ft(signal):
     L = len(signal) # nombre d'échantillons
@@ -54,21 +44,6 @@ def ft(signal):
         result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / L))
     return result
 
-def fft(signal):
-    fourier = np.fft.fft(signal)
-    return fourier
-
-def fstdft(signal, window=lambda t: 1):
-    window = discretize_window(window=window)
-    L = len(signal)
-    result = np.zeros((L, L), dtype=np.complex128)
-    for i in range(L):
-        translated_window = np.ones(L, dtype=np.complex128)
-        for k in range(L):
-            t = k
-            translated_window[k] = window[t - i]
-        result[i] = fft(signal * np.conjugate(translated_window))
-    return result.transpose()
 
 def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: int=1):
     N = coefs.shape[0]
@@ -80,13 +55,8 @@ def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: in
             l = np.arange(0, N, beta)
             tm_dual = dual_window[n - k] * np.exp(1j * 2 * np.pi * (n/N) * l)
             signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
-    # print("produit scalaire", np.sum(np.conjugate(window[x])*dual_window[x] for x in np.arange(N)))
-    # signal /= N * np.sum(np.conjugate(window[x]) * dual_window[x] for x in np.arange(N)) + 10e-12
     return signal
 
-    
-    
-    
 
 def plot_dft(signal, ax_index, module_only = False):
     print("Calcul de la DFT...")
@@ -125,51 +95,6 @@ def plot_fft(signal, ax_index, module_only = False):
         axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
 
 
-def plot_fstdft(signal, ax_index, window, plot_ref=True, label="", tolerance=-1, linear=False):
-    print("Calcul de la FSTDFT...")
-    result_raw = fstdft(signal=signal, window=window)
-    
-    
-    result = result_raw[:L//2,:]
-    if linear:
-        result = np.abs(result)
-    else:
-        result = np.abs(result)**2
-    result /= np.max(result) if np.max(result) != 0 else 1
-    
-    if tolerance >= 0:
-        result[result < tolerance] = 0
-    else:
-        result[result < 0.005] = 0
-    nonzero_y, nonzero_x = np.nonzero(result)
-    
-    if len(nonzero_y) == 0:
-        return 0  # Tout est nul, seuil à 0
-    
-    last_nonzero_y = np.max(nonzero_y)
-    # result = result[:last_nonzero_y + 1,:]
-    
-    
-    
-    freq = np.linspace(0, L//2, len(signal)//2)
-    # temps = np.arange(len(signal)) / sr
-    temps = np.linspace(min_time, max_time, int(duration * sr))
-    # freq = freq[:last_nonzero_y + 1]
-    axes[ax_index].pcolormesh(temps, freq, result, shading='gouraud')
-    # axes[ax_index].set_yscale('log')
-    if label != "":
-        axes[ax_index].set_title(label)
-    else:
-        axes[ax_index].set_title("Transformée de Fourier en temps court")
-    axes[ax_index].set_ylabel('Hz')
-    axes[ax_index].set_xlabel('Progression')
-    axes[ax_index].set_xlim(min_time, max_time)
-    axes[ax_index].set_ylim(0, last_nonzero_y + 1)
-    
-    if plot_ref:
-        plot_time_frequencies_reference(ax=axes[ax_index])
-    
-    return result_raw
 
 
 def plot_scipy_fstdft(signal, ax_index, window=None): ## SCIPY
@@ -205,11 +130,15 @@ def plot_scipy_fstdft(signal, ax_index, window=None): ## SCIPY
     axes[ax_index].set_ylim(0, last_nonzero_y + 1)
 
 
-def plot_window(window, ax_index, label=""):
-    axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.real(window), color='blue', alpha=0.7, linewidth=0.7)
-    imag = np.imag(window)
+def plot_window(d_window, ax_index, label=""):
+    window_vis = d_window.copy()
+    window_vis[:L//2] = d_window[L//2:]
+    window_vis[L//2:] = d_window[:L//2]
+    
+    axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.real(window_vis), color='blue', alpha=0.7, linewidth=0.7)
+    imag = np.imag(window_vis)
     if (imag > 0.0).any():
-        axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=0.7)
+        axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window_vis), color='red', alpha=0.7, linewidth=0.7)
     # axes[ax_index].set_xlabel("Progression")
     # axes[ax_index].set_ylabel("Amplitude")
     axes[ax_index].grid(True, alpha=0.3)
@@ -282,10 +211,10 @@ if __name__ == "__main__":
 
 
     y_lim = 2.5
-    plot_signal(signal, ax_index=0, custom_y_lim=y_lim)
+    plot_signal(signal, axes[0], custom_y_lim=y_lim)
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True, tolerance=0.02) ## pour indicatrice
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=False, tolerance=0, linear=True)
-    result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True)
+    result = plot_fstdft(signal, axes[1], d_window=d_window, plot_ref=True)
 
 
     # plot_scipy_fstdft(signal, ax_index=2, window=window) ## je n'arrive pas à le faire fonctionner correctement..
@@ -299,7 +228,29 @@ if __name__ == "__main__":
 
 
     # d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
-    d_dual_window = compute_alternate_dual_window(d_window)
+    # d_dual_window = compute_alternate_dual_window(d_window)
+    
+    
+    
+    # xi = build_xi()
+    # d_dual_window = 0.01*xi[(5,1+beta)] + 0.01*xi[(4,1+beta)] + 0.01*xi[(0,1+beta)] + compute_dual_window(window, alpha=alpha, beta=beta)
+    
+    
+    
+    canonical_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    # exp_part = discretize_window(window=lambda t: (1 - np.exp(- (t/0.05)**2)))
+    # d_test_window = -canonical_dual_window * exp_part
+    # d_test_window = discretize_window(window=lambda t: 0.001*np.sin(2 * np.pi * t * 5))
+    # d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta) + approximate_window_from_dual_dir(d_test_window)
+    
+    # d_dual_window = d_window
+    
+    # from methode_iterative import approximate_compact_support_iter
+    # d_dual_window = canonical_dual_window + approximate_compact_support_iter(0.1, 100)
+    
+    # d_dual_window = approximate_window_from_dual_dir(signal) + canonical_dual_window
+    
+    d_dual_window = canonical_dual_window
     
     # test = np.zeros(L, np.complex128)
     # k = 10
@@ -325,18 +276,25 @@ if __name__ == "__main__":
     
     
     # d_dual_window /= 10
-    reconstructed_signal = reconstruct_signal(result, discretize_window(window), d_dual_window, alpha, beta)
-    plot_signal(reconstructed_signal, ax_index=2, custom_y_lim=y_lim)
+    reconstructed_signal = reconstruct_signal(result, d_window, d_dual_window, alpha, beta)
+    
+    # from reseau_densite import create_lattice, reconstruct_signal_from_lattice
+    # lattice = create_lattice(gap=(2*alpha, 2*beta), offset=(0,0))
+    # lattice += create_lattice(gap=(2*alpha, 2*beta), offset=(0,beta))
+    
+    # reconstructed_signal = reconstruct_signal_from_lattice(result, d_window, d_dual_window, lattice=lattice)
+    # reconstructed_signal *= 1.5
+    plot_signal(reconstructed_signal, axes[2], custom_y_lim=y_lim)
 
 
 
 
 
     ## pour la visualisation
-    dual_window_vis = d_dual_window.copy()
-    dual_window_vis[:L//2] = d_dual_window[L//2:]
-    dual_window_vis[L//2:] = d_dual_window[:L//2]
-    plot_window(dual_window_vis, ax_index=5, label="Fenêtre duale")
+    # dual_window_vis = d_dual_window.copy()
+    # dual_window_vis[:L//2] = d_dual_window[L//2:]
+    # dual_window_vis[L//2:] = d_dual_window[:L//2]
+    plot_window(d_dual_window, ax_index=5, label="Fenêtre duale")
 
 
     ## plot grille alphaZ \times betaZ
@@ -349,7 +307,7 @@ if __name__ == "__main__":
 
 
 
-    plot_fstdft(reconstructed_signal, ax_index=3, window=window, plot_ref=False, label="STFT du signal reconstruit")
+    plot_fstdft(reconstructed_signal, axes[3], d_window=d_window, plot_ref=False, label="STFT du signal reconstruit")
     # plot_fstdft(reconstructed_signal, ax_index=3, window=window, plot_ref=False, label="STFT du signal reconstruit", tolerance=0.08)
 
 
@@ -366,7 +324,7 @@ if __name__ == "__main__":
     
     plt.close()
     fig, axes = plt.subplots(2, 1, figsize=(7, 5)) ## changer 1er argument accordement
-    plot_signal(np.abs(signal - reconstructed_signal), ax_index=0, label="Erreur", color='red')
+    plot_signal(np.abs(signal - reconstructed_signal), axes[0], label="Erreur", color='red', logscale=True)
     plt.show()
 
 

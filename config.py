@@ -4,6 +4,7 @@
 # config file, change settings here
 #
 # (file imported by other files)
+############# END INFOS ###############
 
 
 from signal_test import signal_test
@@ -27,7 +28,7 @@ def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l
 def gaussian(sigma: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de taille donnée)
     assert sigma > 0
     return lambda t: np.exp(-np.pi*(t/sigma)**2) / sigma
-    # return lambda t: np.exp(-np.pi*(t/sigma)**2) / sigma
+    # return lambda t: np.exp(-np.pi*(t/sigma)**2)
 
 def gaussian_comp_supp(sigma: float):
     assert sigma > 0
@@ -60,7 +61,8 @@ def gaussian_comp_supp(sigma: float):
 #     return function
 
 def test_window(sigma: float):
-    return lambda t: (np.exp(-np.pi*(t/sigma)**2) / sigma) * np.exp(2j * np.pi*(0.5*t/sigma)) ## gaussienne "tournante"
+    # return lambda t: (np.exp(-np.pi*(t/sigma)**2) / sigma) * np.exp(2j * np.pi*(0.5*t/sigma)) ## gaussienne "tournante"
+    return lambda t: (np.exp(-np.pi*(t/sigma)**2) / sigma) * np.sin(2 * np.pi * t * 2) ** 2
 
 ############# WINDOWS #############
 
@@ -92,10 +94,10 @@ L_sampling = np.arange(0, L, dtype=np.complex64)
 L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex64)
 
 
-# alpha: int = 10
-# beta: int = 25
-alpha: int = 20
-beta: int = 5
+# alpha: int = 50
+# beta: int = 5
+alpha: int = 25
+beta: int = 10
 beta_t = L//beta
 alpha_t = L//alpha
 
@@ -108,14 +110,20 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
         # return window(L_sampling/L) # il faut plot [0,1]
     else:
         return window(L_sampling/length)
+# def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
+#     discretized_window = window(np.linspace(-0.5, 0.5, length, dtype=np.complex64))
+#     d_window_ = discretized_window.copy()
+#     d_window_[:L//2] = discretized_window[L//2:]
+#     d_window_[L//2:] = discretized_window[:L//2]
+#     return d_window_
 ################ END TOOLS ###################
 
 
 
-# window = ind_zero(0.15)
+# window = ind_zero(0.05)
 # sigma = 0.1999999955
-sigma = 0.2
-window = gaussian(sigma)
+sigma = 0.1
+window = gaussian(sigma) 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)
 # window = lambda t: window_(t) * np.sin(2 * np.pi * 100 * t)
@@ -126,6 +134,7 @@ print()
 print("--------- BEGIN VERIFICATIONS config.py ---------")
 print("L:", L, "; alpha:", alpha, "; beta:", beta, "; alpha*beta:", alpha*beta)
 print("alpha_tilde", alpha_t, "; beta_tilde:", beta_t, "; alpha_tilde*beta_tilde:", alpha_t*beta_t)
+print("alpha_tilde - beta =", alpha_t - beta)
 if L % beta != 0:
     print("BETA NE DIVISE PAS L")
 elif L % alpha != 0:

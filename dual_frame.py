@@ -4,29 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
+from tools import*
 from config import*
 
 ## matrice circulante: [A_i] où A_i: np.ndarray
 
 
-def pos_mod(a, mod): ## inutile car les array le font très bien tout seul
-    """positive modulo, a: int or a: np.ndarray
 
-    Args:
-        a (int or np.array): 
-        mod (int): 
-
-    Returns:
-        int or np.array: a modulo mod, with a >= 0
-    """
-    assert mod >= 0
-    remain = a % mod
-    if type(remain) is np.ndarray:
-        for i in range(len(remain)):
-            if remain[i] < 0:
-                remain[i] + mod
-        return remain
-    return remain if remain >= 0 else remain + mod
 
 def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
     beta_t = L//beta
@@ -96,10 +80,10 @@ def compute_dual_window(window, alpha=alpha, beta=beta):
     print("Calcul de la fenêtre duale")
     
     S = construct_operator_matrix(d_window, alpha=alpha,beta=beta)
-    eigenvalues, eigenvectors = np.linalg.eig(S)
-    eigenvalues = np.real(eigenvalues)
-    print(f"valeurs propres de S: max: {np.max(eigenvalues)}, min: {np.min(eigenvalues)}")
-    print(f"conditionnement de S:", np.linalg.cond(S))
+    # eigenvalues, eigenvectors = np.linalg.eig(S)
+    # eigenvalues = np.real(eigenvalues)
+    # print(f"valeurs propres de S: max: {np.max(eigenvalues)}, min: {np.min(eigenvalues)}")
+    # print(f"conditionnement de S:", np.linalg.cond(S))
     S_inv = np.linalg.inv(S)
     # d_window = window(np.arange(L))
     
@@ -126,6 +110,11 @@ def compute_tight_frame(d_window, alpha=alpha, beta=beta, S=None):
     d_window_mdemi = Smdemi @ d_window
     
     S_tight = construct_operator_matrix(d_window_mdemi, alpha=alpha, beta=beta)
+    
+    # eigenvalues, eigenvectors = np.linalg.eig(S_tight)
+    # eigenvalues = np.real(eigenvalues)
+    # print(np.sort(eigenvalues))
+    
     return S_tight, d_window_mdemi
 
 ## cas alpha = 1
@@ -139,18 +128,23 @@ def compute_tight_frame(d_window, alpha=alpha, beta=beta, S=None):
 
 
 def plot_window(window_, ax, is_discrete=True, label="", custom_y_lim=0.0):
-    if is_discrete:
-        window = window_.copy()
-        window[:L//2] = window_[L//2:]
-        window[L//2:] = window_[:L//2]
-    else:
-        window = window_
+    # if is_discrete:
+    #     window = window_.copy()
+    #     window[:L//2] = window_[L//2:]
+    #     window[L//2:] = window_[:L//2]
+    # else:
+    #     window = window_
+    window = window_.copy()
+    window[:L//2] = window_[L//2:]
+    window[L//2:] = window_[:L//2]
+    
     
     ax.plot(np.linspace(-0.5,0.5,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
     ax.plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=1.0)
     # ax.set_xlabel("Progression")
     # ax.set_ylabel("Amplitude")
     ax.grid(True, alpha=0.3)
+    
     ax.margins(0, x=None, y=None, tight=True)
     
     # axes[ax_index].plot(np.linspace(-0.5,0.5,L), discretize_window(window, True))
