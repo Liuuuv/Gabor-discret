@@ -13,6 +13,14 @@ from dual_frame import plot_window
 from tools import*
 from config import*
 
+n = 4
+poly = lambda t: t**n * (1-t)**n * 2 ** (2*n)
+signal_test = poly(np.linspace(0, 1, L))
+
+## renverser
+signal_test_ = signal_test.copy()
+signal_test[:L//2] = signal_test_[L//2:]
+signal_test[L//2:] = signal_test_[:L//2]
 
 def square_partial_sum(coefs, d_dual_window, size_alpha, size_beta, ax=None):
     return square_partial_sum_fft(coefs, d_dual_window, size_alpha, size_beta, ax)
@@ -88,54 +96,58 @@ def square_partial_sum_fft(coefs, d_dual_window, size_alpha, size_beta, ax=None)
 
 if __name__ == "__main__":
     start_time = time.time()
-    fig, axes = plt.subplots(4, 1, figsize=(14, 10)) ## changer 1er argument accordement
-    
-    plot_signal(signal=signal_test, ax=axes[0])
+    # fig, axes = plt.subplots(4, 1, figsize=(14, 10)) ## changer 1er argument accordement
     
     
+    # plot_signal(signal=signal_test, ax=axes[0])
     
     
-    canonical_d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    # canonical_d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
     
     
-    # d_dual_window = compute_alternate_dual_window(d_window, canonical_dual=canonical_d_dual_window)
-    # d_dual_window = canonical_d_dual_window
+    # # d_dual_window = compute_alternate_dual_window(d_window, canonical_dual=canonical_d_dual_window)
+    # # d_dual_window = canonical_d_dual_window
     
-    exp_part = discretize_window(window=lambda t: (1 - (np.cos(2 * np.pi * t * 2) ** 2) * np.exp(- (t/0.15)**2)))
-    d_test_window = -canonical_d_dual_window * exp_part
+    # exp_part = discretize_window(window=lambda t: (1 - (np.cos(2 * np.pi * t * 2) ** 2) * np.exp(- (t/0.15)**2)))
+    # d_test_window = -canonical_d_dual_window * exp_part
     
-    # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 1))
+    # # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 1))
     
-    reconstructed = approximate_window_from_dual_dir(d_test_window)
-    d_dual_window = canonical_d_dual_window + reconstructed
-    
-    
-    # d_dual_window = canonical_d_dual_window
+    # reconstructed = approximate_window_from_dual_dir(d_test_window)
+    # d_dual_window = canonical_d_dual_window + reconstructed
     
     
-    coefs = plot_fstdft(signal_test, axes[1], d_window=d_dual_window, show_full=False)
+    # # d_dual_window = canonical_d_dual_window
     
     
-    partial_signal = square_partial_sum(coefs, d_dual_window=d_window ,size_alpha=100000, size_beta=40000, ax=axes[1])
+    # coefs = plot_fstdft(signal_test, axes[1], d_window=d_dual_window, show_full=False)
     
-    y_lim = np.max(np.abs(signal_test))
-    plot_signal(signal=partial_signal, ax=axes[2], custom_y_lim=y_lim)
     
-    plot_window(d_dual_window, ax=axes[3])
+    # partial_signal = square_partial_sum(coefs, d_dual_window=d_window ,size_alpha=100000, size_beta=40000, ax=axes[1])
     
+    # y_lim = np.max(np.abs(signal_test))
+    # plot_signal(signal=partial_signal, ax=axes[2], custom_y_lim=y_lim)
+    
+    # plot_window(d_dual_window, ax=axes[3])
     
     
     
-    # plt.show()
-    # plt.get_current_fig_manager().window.state('zoomed')
-    plt.tight_layout()
+    
+    # # plt.show()
+    # # plt.get_current_fig_manager().window.state('zoomed')
+    # plt.tight_layout()
 
-    plt.savefig('convergence.jpg', dpi=300)
+    
+    # plt.savefig('convergence.jpg', dpi=300)
     
     
     plt.close()
     
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    canonical_d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    d_dual_window = canonical_d_dual_window
+    coefs = plot_fstdft(signal_test, d_window=d_dual_window)
+    
+    fig, axes = plt.subplots(3, 1, figsize=(14, 10))
     sizes_alpha = np.arange(1, alpha_t, 1)
     # print(sizes_alpha)
     sizes_beta = np.arange(1, beta_t, 1)
@@ -149,10 +161,10 @@ if __name__ == "__main__":
     
     
     diffs = diffs.transpose()
-    diffs = np.log(diffs)
+    log_diffs = np.log(diffs)
     # diffs = diffs ** 2
     # im = axes[0].pcolormesh(sizes_alpha, sizes_beta, diffs, shading='gouraud')
-    im = axes[0].pcolormesh(sizes_alpha, sizes_beta, diffs)
+    im = axes[0].pcolormesh(sizes_alpha, sizes_beta, log_diffs)
 
 
     fig.colorbar(im, orientation='vertical', label="Norme inf, échelle log")
@@ -160,6 +172,17 @@ if __name__ == "__main__":
     axes[0].set_ylabel("Taille beta")
     axes[0].set_title("Erreur (norme infinie) des sommes partielles rectangulaires")
     
+    
+    plot_window(window_=signal_test, ax=axes[1])
+    
+    
+    
+    ## plot 1D
+    fixed_alpha: int = 10
+    axes[2].plot(sizes_beta, diffs[:,fixed_alpha])
+    axes[2].set_yscale('log')
+    axes[2].grid(True, alpha=0.3)
+    axes[2].set_title(f"alpha: {fixed_alpha}, duale canonique, n={n}")
     
     end_time = time.time()
     print(f"TEMPS D'EXECUTION: {end_time - start_time}")

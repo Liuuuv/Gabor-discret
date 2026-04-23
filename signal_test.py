@@ -21,11 +21,11 @@ test_frequencies = {
 def define_signal(dict: dict, N=200): ## N: num points
     x = np.zeros(N) # values
     n = np.linspace(0, 1, N) # time
-    scale = 1/1 # scale of time
     for times in dict.keys():
         mask = (n >= times[0]) & (n <= times[1])
         n_mask = n[mask]
-        freq = dict[times]( (n_mask * (times[1] - times[0])  - times[0]) / (times[1] - times[0]))
+        # freq = dict[times]( (n_mask * (times[1] - times[0]) + times[0]) / (times[1] - times[0]) )
+        freq = dict[times]( (n_mask * (times[1] - times[0]) - times[0]) / (times[1] - times[0]) ) ## il faut un '+'
         x[mask] += np.sin(2 * np.pi * freq * n_mask)
     return x
 
@@ -59,8 +59,8 @@ def plot_time_frequencies_reference(signal=signal_test, frequency_dict=test_freq
     
     if not ax:
         ax2.set_xlabel('Progression')
-        ax2.set_ylabel('Fréquence (Hz)')
-        ax2.set_title('Plan temps-fréquence')
+        ax2.set_ylabel('Fréquence')
+        ax2.set_title('Fréquence de référence')
         ax2.set_xlim(0, 1)
         ax2.grid(True, alpha=0.3)
     
