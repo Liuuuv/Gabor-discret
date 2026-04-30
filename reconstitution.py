@@ -214,7 +214,7 @@ if __name__ == "__main__":
     plot_signal(signal, axes[0], custom_y_lim=y_lim)
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=True, tolerance=0.02) ## pour indicatrice
     # result = plot_fstdft(signal, ax_index=1, window=window, plot_ref=False, tolerance=0, linear=True)
-    result = plot_fstdft(signal, axes[1], d_window=d_window, plot_ref=True)
+    result = plot_fstdft(signal, axes[1], d_window=d_window, plot_ref=False)
 
 
     # plot_scipy_fstdft(signal, ax_index=2, window=window) ## je n'arrive pas à le faire fonctionner correctement..
@@ -223,7 +223,7 @@ if __name__ == "__main__":
 
     
     
-    plot_window(discretize_window(window, True), ax_index=4, label="Fenêtre")
+    plot_window(d_window=d_window, ax_index=4, label="Fenêtre")
 
 
 
@@ -284,7 +284,7 @@ if __name__ == "__main__":
     
     # reconstructed_signal = reconstruct_signal_from_lattice(result, d_window, d_dual_window, lattice=lattice)
     # reconstructed_signal *= 1.5
-    plot_signal(reconstructed_signal, axes[2], custom_y_lim=y_lim)
+    plot_signal(reconstructed_signal, axes[2], custom_y_lim=y_lim, label="Signal reconstruit")
 
 
 
@@ -319,10 +319,10 @@ if __name__ == "__main__":
 
     # plt.savefig('plot.pdf', bbox_inches='tight')  # inutilisé
     plt.savefig('signal_temporel.jpg', dpi=300)
-    # plt.show()
+    plt.show()
     
     
-    plt.close()
+    # plt.close()
     fig, axes = plt.subplots(2, 1, figsize=(7, 5)) ## changer 1er argument accordement
     plot_signal(np.abs(signal - reconstructed_signal), axes[0], label="Erreur", color='red', logscale=True)
     plt.show()

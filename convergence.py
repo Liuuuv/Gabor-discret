@@ -13,14 +13,14 @@ from dual_frame import plot_window
 from tools import*
 from config import*
 
-n = 4
+n = 8
 poly = lambda t: t**n * (1-t)**n * 2 ** (2*n)
 signal_test = poly(np.linspace(0, 1, L))
 
 ## renverser
-signal_test_ = signal_test.copy()
-signal_test[:L//2] = signal_test_[L//2:]
-signal_test[L//2:] = signal_test_[:L//2]
+# signal_test_ = signal_test.copy()
+# signal_test[:L//2] = signal_test_[L//2:]
+# signal_test[L//2:] = signal_test_[:L//2]
 
 def square_partial_sum(coefs, d_dual_window, size_alpha, size_beta, ax=None):
     return square_partial_sum_fft(coefs, d_dual_window, size_alpha, size_beta, ax)
@@ -96,49 +96,49 @@ def square_partial_sum_fft(coefs, d_dual_window, size_alpha, size_beta, ax=None)
 
 if __name__ == "__main__":
     start_time = time.time()
-    # fig, axes = plt.subplots(4, 1, figsize=(14, 10)) ## changer 1er argument accordement
+    fig, axes = plt.subplots(4, 1, figsize=(14, 10)) ## changer 1er argument accordement
     
     
-    # plot_signal(signal=signal_test, ax=axes[0])
+    plot_signal(signal=signal_test, ax=axes[0])
     
     
-    # canonical_d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    canonical_d_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
     
     
-    # # d_dual_window = compute_alternate_dual_window(d_window, canonical_dual=canonical_d_dual_window)
-    # # d_dual_window = canonical_d_dual_window
+    # d_dual_window = compute_alternate_dual_window(d_window, canonical_dual=canonical_d_dual_window)
+    # d_dual_window = canonical_d_dual_window
     
-    # exp_part = discretize_window(window=lambda t: (1 - (np.cos(2 * np.pi * t * 2) ** 2) * np.exp(- (t/0.15)**2)))
-    # d_test_window = -canonical_d_dual_window * exp_part
+    exp_part = discretize_window(window=lambda t: (1 - (np.cos(2 * np.pi * t * 2) ** 2) * np.exp(- (t/0.15)**2)))
+    d_test_window = -canonical_d_dual_window * exp_part
     
-    # # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 1))
+    # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 1))
     
-    # reconstructed = approximate_window_from_dual_dir(d_test_window)
-    # d_dual_window = canonical_d_dual_window + reconstructed
-    
-    
-    # # d_dual_window = canonical_d_dual_window
+    reconstructed = approximate_window_from_dual_dir(d_test_window)
+    d_dual_window = canonical_d_dual_window + reconstructed
     
     
-    # coefs = plot_fstdft(signal_test, axes[1], d_window=d_dual_window, show_full=False)
+    # d_dual_window = canonical_d_dual_window
     
     
-    # partial_signal = square_partial_sum(coefs, d_dual_window=d_window ,size_alpha=100000, size_beta=40000, ax=axes[1])
-    
-    # y_lim = np.max(np.abs(signal_test))
-    # plot_signal(signal=partial_signal, ax=axes[2], custom_y_lim=y_lim)
-    
-    # plot_window(d_dual_window, ax=axes[3])
+    coefs = plot_fstdft(signal_test, axes[1], d_window=d_dual_window, show_full=False, linear=True, plot_ref=False)
     
     
+    partial_signal = square_partial_sum(coefs, d_dual_window=d_window ,size_alpha=100000, size_beta=40000, ax=axes[1])
+    
+    y_lim = np.max(np.abs(signal_test))
+    plot_signal(signal=partial_signal, ax=axes[2], custom_y_lim=y_lim)
+    
+    plot_window(d_dual_window, ax=axes[3])
     
     
-    # # plt.show()
-    # # plt.get_current_fig_manager().window.state('zoomed')
-    # plt.tight_layout()
+    
+    
+    # plt.show()
+    # plt.get_current_fig_manager().window.state('zoomed')
+    plt.tight_layout()
 
     
-    # plt.savefig('convergence.jpg', dpi=300)
+    plt.savefig('convergence.jpg', dpi=300)
     
     
     plt.close()

@@ -28,7 +28,7 @@ def plot_signal(signal, ax, custom_y_lim=0.0, label="", color='blue', logscale=F
     temps = np.linspace(min_time, max_time, len(signal))
     ax.plot(temps, signal, color=color, alpha=0.7, linewidth=0.8)
     if label == "":
-        ax.set_title(f"Fréquence d'échantillonnage: {sr}")
+        ax.set_title(f"Signal, Fréquence d'échantillonnage: {sr}")
     else:
         ax.set_title(label)
     ax.set_xlabel("Progression")

@@ -122,7 +122,7 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
-sigma = 0.1
+sigma = 0.15
 window = gaussian(sigma) 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)
