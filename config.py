@@ -93,11 +93,18 @@ L = len(signal)
 L_sampling = np.arange(0, L, dtype=np.complex64)
 L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex64)
 
-
+## q=2
 # alpha: int = 50
 # beta: int = 5
+
+## q=2
 alpha: int = 25
 beta: int = 10
+
+## q=4
+alpha: int = 25
+beta: int = 5
+
 beta_t = L//beta
 alpha_t = L//alpha
 
@@ -122,7 +129,7 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
-sigma = 0.15
+sigma = 0.1
 window = gaussian(sigma) 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)

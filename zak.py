@@ -8,6 +8,7 @@ from config import*
 from dual_frame import compute_dual_window, compute_tight_frame, construct_operator_matrix, plot_window
 from zak_tools import*
 from base_orth import build_xi
+from tools import*
 
 
 
@@ -131,44 +132,55 @@ def dual_dir_base_vec(k, n):
 #     ax.set_title(label)
 #     return result_raw
 
-def plot_zak_transform(d_window, ax, label="", bars=False):
+def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None):
     if bars:
         return plot_zak_transform_bars(d_window, ax, label="")
     print("Plotting zak transform", label)
     J = np.arange(alpha)
     NU = np.arange(alpha_t)
     
-    result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
-    for j in J:
-        for nu in NU:
-            result_raw[j, nu] = zak_transform(d_window, j, nu)
+    if zak_precomputed is None:
+        result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
+        for j in J:
+            for nu in NU:
+                result_raw[j, nu] = zak_transform(d_window, j, nu)
+    else:
+        result_raw = zak_precomputed.copy()
     
     
-    result = result_raw.copy()
     
-    # Module pour la hauteur
-    Z = np.abs(result)
-    # Phase pour la couleur
-    phase = np.angle(result)
+    if ax:
     
-    J, NU = np.meshgrid(J, NU)
-    Z = np.transpose(Z)
-    phase = np.transpose(phase)
-    
-    # Normalisation de la phase pour la couleur
-    norm_phase = (phase + np.pi) / (2 * np.pi)  # entre 0 et 1
-    
-    surf = ax.plot_surface(J, NU, Z, facecolors=plt.cm.hsv(norm_phase), alpha=0.9)
-    
-    ax.set_xlabel("j")
-    ax.set_ylabel("nu")
-    ax.set_zlabel("Module")
-    ax.set_title(f"{label}")
-    
-    # Barre de couleur pour la phase
-    mappable = plt.cm.ScalarMappable(cmap=plt.cm.hsv)
-    mappable.set_array(phase)
-    plt.colorbar(mappable, ax=ax, label="Phase [rad]")
+        result = result_raw.copy()
+        
+        # Module pour la hauteur
+        Z = np.abs(result)
+        
+        # Phase pour la couleur
+        phase = np.angle(result)
+        
+        J, NU = np.meshgrid(J, NU)
+        Z = np.transpose(Z)
+        phase = np.transpose(phase)
+        
+        # Normalisation de la phase pour la couleur
+        norm_phase = (phase + np.pi) / (2 * np.pi)  # entre 0 et 1
+        
+        surf = ax.plot_surface(J, NU, Z, facecolors=plt.cm.hsv(norm_phase), alpha=0.9)
+        
+        import matplotlib.ticker as ticker
+        ax.zaxis.set_major_formatter(ticker.ScalarFormatter(useOffset=False, useMathText=False))
+        ax.ticklabel_format(axis="z", style="plain")
+        
+        ax.set_xlabel("j")
+        ax.set_ylabel("nu")
+        ax.set_zlabel("Module")
+        ax.set_title(f"{label}")
+        
+        # Barre de couleur pour la phase
+        mappable = plt.cm.ScalarMappable(cmap=plt.cm.hsv)
+        mappable.set_array(phase)
+        plt.colorbar(mappable, ax=ax, label="Phase [rad]")
     
     return result_raw
 
@@ -301,9 +313,13 @@ if __name__ == "__main__":
     
     
     ax3d = fig.add_subplot(*windows, 3, projection='3d')
-    from methode_iterative import approximate_compact_support_iter
-    approximate = approximate_compact_support_iter(0.1, 25)
-    plot_zak_transform(approximate, ax3d, label="approximate")
+    # from methode_iterative import approximate_compact_support_iter
+    # approximate = approximate_compact_support_iter(0.1, 25)
+    # plot_zak_transform(approximate, ax3d, label="approximate")
+    
+    zak_g = plot_zak_transform(d_window=d_window)
+    chi = build_chi(zak_g=zak_g, orthonormal=True)
+    plot_zak_transform(chi[(10,4)], ax3d, label="zak")
     
     
     
