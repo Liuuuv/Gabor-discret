@@ -10,27 +10,27 @@ from base_orth import build_xi
 from tools import*
 from config import*
 
-min_time = 0.0
-max_time = 1.0
-duration = max_time - min_time
+# min_time = 0.0
+# max_time = 1.0
+# duration = max_time - min_time
 
 
-# Charger le fichier MP3w
-# chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku.mp3"
-chemin_fichier = "TERTrace/python/kawaki_wo_ameku_piano.mp3"
-# signal, sr = librosa.load(chemin_fichier, sr=None)
-# signal, sr = librosa.load(chemin_fichier, sr=500)
+# # Charger le fichier MP3w
+# # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
+# # chemin_fichier = "TERTrace/python/kawaki_wo_ameku.mp3"
+# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_piano.mp3"
+# # signal, sr = librosa.load(chemin_fichier, sr=None)
+# # signal, sr = librosa.load(chemin_fichier, sr=500)
 
 
-signal, sr = signal_test, len(signal_test) # ref
+# signal, sr = signal_test, len(signal_test) # ref
 
-# time = np.arange(min_time, max_time, 1/sr)
-# signal = np.sin(2 * np.pi * 200 * time)
+# # time = np.arange(min_time, max_time, 1/sr)
+# # signal = np.sin(2 * np.pi * 200 * time)
 
-signal = signal[int(sr * min_time):int(sr * max_time)]
+# signal = signal[int(sr * min_time):int(sr * max_time)]
 
-L = len(signal)
+# L = len(signal)
 
 
 
@@ -46,16 +46,17 @@ def ft(signal):
 
 
 def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: int=1):
+    print("Reconstruction du signal")
     N = coefs.shape[0]
-    signal = np.zeros(N, dtype=np.complex128)
+    reconstructed_signal = np.zeros(N, dtype=np.complex128)
     if dual_window is None:
         dual_window = window
     for n in range(N):
         for k in np.arange(0, N, alpha):
             l = np.arange(0, N, beta)
             tm_dual = dual_window[n - k] * np.exp(1j * 2 * np.pi * (n/N) * l)
-            signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
-    return signal
+            reconstructed_signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
+    return reconstructed_signal
 
 
 def plot_dft(signal, ax_index, module_only = False):

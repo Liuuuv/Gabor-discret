@@ -10,6 +10,7 @@ from dual_frame import compute_dual_window, compute_tight_frame, construct_opera
 from methode_iterative import approximate_compact_support_iter
 # from zak import plot_zak_transform, dual_dir_base_vec
 from zak_tools import*
+from decomposition_K_Kperp import*
 
 
 
@@ -283,20 +284,23 @@ if __name__ == "__main__":
     
     ########## DUALE ORTH TOUT 1 ##########
     test_kperp = np.zeros(L, dtype=np.complex128)
-    for j in range(alpha):
-        # for nu in range(beta, alpha_t):
-        test_kperp += xi[(j,beta+5)]
-    plot_window(test_kperp, axes[2], label="xi à la main")
+    # for j in range(alpha):
+    #     # for nu in range(beta, alpha_t):
+    #     test_kperp += xi[(j,beta+5)] * 0.001 + xi[(j,beta+2)] * 0.001
+    
+    exp_part = discretize_window(window=lambda t: (1 - np.exp(-(t/0.01)**2)))
+    test_kperp = approximate_window_from_dual_dir(-canonical_dual_window * exp_part)
+    plot_window(canonical_dual_window + test_kperp, axes[2], label="xi à la main")
     #######################################
     
-    plot_fstdft(test_kperp, axes[3], d_window=discretize_window(gaussian(0.05)), plot_ref=False, label="Test K^perp", linear=True)
+    # plot_fstdft(test_kperp, axes[3], d_window=discretize_window(gaussian(0.05)), plot_ref=False, label="Test K^perp", linear=True)
     
     test_k = np.zeros(L, dtype=np.complex128)
     for j in range(alpha):
         # for nu in range(beta, alpha_t):
         test_k += chi[(j,5)]
     plot_window(test_k, axes[4], label="chi à la main")
-    plot_fstdft(test_k, ax=axes[5], d_window=discretize_window(gaussian(0.05)), plot_ref=False, label="Test K", linear=True)
+    # plot_fstdft(test_k, ax=axes[5], d_window=discretize_window(gaussian(0.05)), plot_ref=False, label="Test K", linear=True)
     
     # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 19))
     # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 5) * np.exp(- (t/0.1)**2))

@@ -99,40 +99,40 @@ def plot_fft(signal, ax_index, module_only = False):
         axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
 
 
-def plot_fstdft(signal, ax_index):
+# def plot_fstdft(signal, ax_index):
     
-    print("Calcul de la FSTDFT...")
-    # result = fstdft(signal=signal, window=lambda t: 1)
-    # result = fstdft(signal=signal, window=ind_zero(0.08))
-    result = fstdft(signal=signal, window=lambda t: np.exp(-t**2 / 0.0009))
-    # result = fstdft(signal=signal, window=lambda t: np.exp(-t**2 / 0.1))
+#     print("Calcul de la FSTDFT...")
+#     # result = fstdft(signal=signal, window=lambda t: 1)
+#     # result = fstdft(signal=signal, window=ind_zero(0.08))
+#     result = fstdft(signal=signal, window=lambda t: np.exp(-t**2 / 0.0009))
+#     # result = fstdft(signal=signal, window=lambda t: np.exp(-t**2 / 0.1))
     
-    result = result[:sr//2,:]
-    result = np.abs(result)**2
-    result /= np.max(result)
-    
-    
-    result[result < 0.03] = 0
-    nonzero_y, nonzero_x = np.nonzero(result)
-    
-    if len(nonzero_y) == 0:
-        return 0  # Tout est nul, seuil à 0
-    
-    last_nonzero_y = np.max(nonzero_y)
-    result = result[:last_nonzero_y + 1,:]
+#     result = result[:sr//2,:]
+#     result = np.abs(result)**2
+#     result /= np.max(result)
     
     
+#     result[result < 0.03] = 0
+#     nonzero_y, nonzero_x = np.nonzero(result)
     
-    freq = np.linspace(0, sr//2, len(signal)//2)
-    temps = np.arange(len(signal)) / sr
-    freq = freq[:last_nonzero_y + 1]
-    axes[ax_index].pcolormesh(temps, freq, result, shading='gouraud')
-    # axes[ax_index].set_yscale('log')
-    axes[ax_index].set_title("Spectrogramme d'une FSTDFT, normalisé (norme sup)")
-    axes[ax_index].set_ylabel('Hz')
-    axes[ax_index].set_xlabel('Progression')
+#     if len(nonzero_y) == 0:
+#         return 0  # Tout est nul, seuil à 0
     
-    plot_time_frequencies_reference(ax=axes[ax_index])
+#     last_nonzero_y = np.max(nonzero_y)
+#     result = result[:last_nonzero_y + 1,:]
+    
+    
+    
+#     freq = np.linspace(0, sr//2, len(signal)//2)
+#     temps = np.arange(len(signal)) / sr
+#     freq = freq[:last_nonzero_y + 1]
+#     axes[ax_index].pcolormesh(temps, freq, result, shading='gouraud')
+#     # axes[ax_index].set_yscale('log')
+#     axes[ax_index].set_title("Spectrogramme d'une FSTDFT, normalisé (norme sup)")
+#     axes[ax_index].set_ylabel('Hz')
+#     axes[ax_index].set_xlabel('Progression')
+    
+#     plot_time_frequencies_reference(ax=axes[ax_index])
 
 
 def plot_scipy_fstdft(signal, ax_index): ## SCIPY

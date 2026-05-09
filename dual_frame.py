@@ -19,13 +19,17 @@ def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
     if alt_window is None:
         alt_window = window
     
-    matrix = np.ones((L, L), dtype=np.complex64)
-    for j in range(L):
+    matrix = np.zeros((L, L), dtype=np.complex128)
+    for j in range(L): ## lignes
         if j % beta_t == 0:
-            for d in range(L):
+            for d in range(L): ## déplacement
                 n = np.arange(alpha_t)
-                matrix[int(j+d) % L, int(d) % L] = float(beta_t) * sum(
-                    np.conjugate(window[int(j+d)%L - alpha * n]) * alt_window[int(d)%L - alpha * n]
+                # matrix[int(j+d) % L, int(d) % L] = float(beta_t) * sum(
+                #     np.conjugate(window[(int(j+d) - alpha * n) % L]) * alt_window[(int(d) - alpha * n) % L]
+                # )
+                matrix[int(j+d) % L, int(d) % L] = beta_t * np.sum(
+                    np.conjugate(window[(int(d) - alpha * n) % L]) * alt_window[(int(j+d) - alpha * n) % L],
+                    dtype=np.complex128
                 )
                 
                 ####### version pos_mod #######
@@ -33,9 +37,9 @@ def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
                 #     np.conjugate(window[pos_mod(int(j+d)%L - alpha * n, L)]) * window[pos_mod(int(d)%L - alpha * n, L)]
                 # )
                 
-        else: # 0
-            for d in range(L):
-                matrix[int(j+d) % L, int(d) % L] = 0.0
+        # else: # 0
+        #     for d in range(L):
+        #         matrix[int(j+d) % L, int(d) % L] = 0.0
     
     # plt.figure()
     # plt.imshow(np.abs(matrix))
@@ -43,25 +47,109 @@ def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
     # plt.show()
     
     return matrix
-            
 
-def construct_circulant(matrix): ## pour S walnut
-    circ = []
-    for s in range(alpha_t):
-        # circ.append(matrix[s * alpha:(s+1) * alpha, s * alpha:(s+1) * alpha])
-        circ.append(matrix[0:alpha, s * alpha:(s+1) * alpha])
 
-    return np.array(circ)
+# def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
+#     beta_t = L // beta
+#     alpha_t = L // alpha
+    
+#     if alt_window is None:
+#         alt_window = window
+    
+#     matrix = np.zeros((L, L), dtype=np.complex128)
+#     for j in range(L):
+#         if j % beta_t == 0:
+#             for d in range(L):
+#                 n = np.arange(alpha_t)
+#                 idx_row = int(j + d) % L
+#                 idx_col = int(d) % L
+#                 matrix[idx_row, idx_col] = float(beta_t) * np.sum(
+#                     np.conjugate(window[(idx_row - alpha * n) % L]) 
+#                     * alt_window[(idx_col - alpha * n) % L]
+#                 )
+    
+#     return matrix
+
+
+def construct_circulant(matrix, mean: bool = False): ## pour S walnut
+    # circ = []
+    # for s in range(alpha_t):
+    #     # circ.append(matrix[s * alpha:(s+1) * alpha, s * alpha:(s+1) * alpha])
+    #     circ.append(matrix[0:alpha, s * alpha:(s+1) * alpha])
+    # return circ
+    
+    # return np.array(circ)
+    if not mean:
+       return matrix[0:alpha].reshape(alpha, alpha_t, alpha).transpose(1, 0, 2).astype(np.complex128)
+    else:
+        circ = np.zeros((alpha_t, alpha, alpha), dtype=np.complex128)
+        for s in range(alpha_t):
+            for i in range(alpha_t):
+                circ[s] += matrix[i * alpha:(i+1) * alpha, ((i+s) % alpha_t) * alpha:((i+s) % alpha_t + 1) * alpha]
+            circ[s] /= alpha_t
+        return circ
 
 def circlulant_ft(C: np.ndarray):
-    C_fourier = []
-    N = len(C)
-    for r in range(N):
-        matrix = np.zeros_like(C[r])
-        for s in range(N):
-            matrix += np.exp((-1j * 2 * np.pi / N) * s * r) * C[s]
-        C_fourier.append(matrix)
-    return np.array(C_fourier)
+    print("Calcul de la FT d'une circulante")
+    # C_fourier = []
+    # N = len(C)
+    # for r in range(N):
+    #     matrix = np.zeros_like(C[r])
+    #     for s in range(N):
+    #         matrix += np.exp((-1j * 2 * np.pi / N) * s * r) * C[s]
+    #     C_fourier.append(matrix)
+    # return np.array(C_fourier)
+
+    return np.fft.fft(C, axis=0)
+
+def circlulant_ift(C: np.ndarray):
+    # print("Calcul de la IFT d'une circulante")
+    # C_fourier = []
+    # N = len(C)
+    # for r in range(N):
+    #     matrix = np.zeros_like(C[r])
+    #     for s in range(N):
+    #         matrix += np.exp((1j * 2 * np.pi / N) * s * r) * C[s]
+    #     C_fourier.append(matrix)
+    # return np.array(C_fourier)
+    return np.fft.ifft(C, axis=0) * len(C)
+
+def circulant_inverse(C: np.ndarray):
+    print("Calcul d'une circulante inverse")
+    # inv = []
+    # C_fourier = circlulant_ft(C)
+    # for r in range(len(C)):
+    #     matrix = np.zeros_like(C[r])
+    #     matrix += (1 / alpha_t) * np.sum(circlulant_ift(np.linalg.inv(C_fourier)))
+    #     inv.append(matrix)
+    # return np.array(inv)
+    
+    # 1. FT de la circulante -> blocs diagonaux A_hat_r
+    C_fourier = circlulant_ft(C)  # shape: (alpha_t, alpha, alpha)
+    
+    # 2. Inverser chaque bloc A_hat_r
+    C_fourier_inv = np.linalg.inv(C_fourier)  # shape: (alpha_t, alpha, alpha)
+    
+    # 3. IFT sur les blocs inversés -> B_r
+    # circlulant_ift retourne ifft * N, donc on divise par alpha_t
+    # B = circlulant_ift(C_fourier_inv) / alpha_t  # shape: (alpha_t, alpha, alpha)
+    B = circlulant_ift(C_fourier_inv) # shape: (alpha_t, alpha, alpha)
+    
+    print("C shape:", C.shape)
+    print("C_fourier shape:", C_fourier.shape)
+    print("B shape:", B.shape)
+    
+    return B
+
+
+def construct_matrix_from_circulant(C: np.ndarray):
+    print("Reconstruction de la matrice depuis la circulante")
+    matrix = np.zeros((L, L), dtype=np.complex128)
+    for i in range(alpha_t):
+        for j in range(alpha_t):
+            # Le bloc (i,j) d'une matrice circulante par blocs est C[(j-i) % alpha_t]
+            matrix[i * alpha:(i+1) * alpha, j * alpha:(j+1) * alpha] = C[abs(j - i) % alpha_t]
+    return matrix
 
 
 def shift(xs, n):
@@ -77,7 +165,7 @@ def shift(xs, n):
 
 
 def compute_dual_window(window, alpha=alpha, beta=beta):
-    print("Calcul de la fenêtre duale")
+    print("Calcul de la fenêtre duale canonique")
     
     S = construct_operator_matrix(d_window, alpha=alpha,beta=beta)
     # eigenvalues, eigenvectors = np.linalg.eig(S)

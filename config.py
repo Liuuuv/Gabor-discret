@@ -10,6 +10,7 @@
 from signal_test import signal_test
 import numpy as np
 import matplotlib.pyplot as plt
+import librosa
 
 ############# WINDOWS #############
 def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de largeur donnée)
@@ -66,32 +67,37 @@ def test_window(sigma: float):
 
 ############# WINDOWS #############
 
-
-
-min_time = 0
+min_time = 0.0
 max_time = 1.0
+
+# min_time = 2.0
+# max_time = 5.0
+
+
 duration = max_time - min_time
 
 
 ############ LOAD MP3 FILE ############
 # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_piano.mp3"
+# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_sped_up.mp3"
+# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_piano.mp3"
+chemin_fichier = "TERTrace/python/kawaki_wo_ameku.wav"
 # signal, sr = librosa.load(chemin_fichier, sr=None)
-# signal, sr = librosa.load(chemin_fichier, sr=1500)
+signal, sr = librosa.load(chemin_fichier, sr=1500)
+# signal, sr = librosa.load(chemin_fichier, sr=500)
 
 
 signal, sr = signal_test, len(signal_test) # ref
 
-# signal = np.sin(2 * np.pi * 200 * time) # signal ref
+# signal = np.sin(2 * np.pi * 200 * time) # signal ref 2
 
 signal = signal[int(sr * min_time):int(sr * max_time)]
 
 L = len(signal)
 
 ## L_sampling = [0, L//2[ U [-L//2, 0[ | to encode C^L vectors
-L_sampling = np.arange(0, L, dtype=np.complex64)
-L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex64)
+L_sampling = np.arange(0, L, dtype=np.complex128)
+L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex128)
 
 ## q=2
 # alpha: int = 50
@@ -102,8 +108,13 @@ alpha: int = 25
 beta: int = 10
 
 ## q=4
-alpha: int = 25
-beta: int = 5
+# alpha: int = 25
+# beta: int = 5
+
+
+## autre + pas signal_ref
+# alpha: int = 15
+# beta: int = 15
 
 beta_t = L//beta
 alpha_t = L//alpha
@@ -113,7 +124,7 @@ alpha_t = L//alpha
 ################ BEGIN TOOLS ################
 def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
     if normalize:
-        return window(np.linspace(-0.5, 0.5, length, dtype=np.complex64))
+        return window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
         # return window(L_sampling/L) # il faut plot [0,1]
     else:
         return window(L_sampling/length)

@@ -3,6 +3,8 @@ from signal_test import*
 from config import*
 from zak_tools import*
 
+def create_subplots(shape: tuple, figsize:tuple=(14, 10)) -> tuple:
+    return plt.subplots(*shape, figsize=figsize)
 
 def pos_mod(a, mod): ## inutile car les array le font très bien tout seul
     """positive modulo, a: int or a: np.ndarray
@@ -46,32 +48,52 @@ def fft(signal):
     return fourier
 
 
+# def fstdft(signal, d_window=None):
+#     if d_window is None:
+#         d_window = discretize_window(window)
+#     L = len(signal)
+#     result = np.zeros((L, L), dtype=np.complex128)
+#     for i in range(L):
+#         translated_window = np.ones(L, dtype=np.complex128)
+#         for k in range(L):
+#             t = k
+#             translated_window[k] = d_window[t - i]
+#         result[i] = fft(signal * np.conjugate(translated_window))
+#     return result.transpose()
+
 def fstdft(signal, d_window=None):
     if d_window is None:
         d_window = discretize_window(window)
+    
     L = len(signal)
-    result = np.zeros((L, L), dtype=np.complex128)
-    for i in range(L):
-        translated_window = np.ones(L, dtype=np.complex128)
-        for k in range(L):
-            t = k
-            translated_window[k] = d_window[t - i]
-        result[i] = fft(signal * np.conjugate(translated_window))
-    return result.transpose()
+    
+    # Construire la matrice des fenêtres translatées en une seule opération
+    # indices[i, k] = (k - i) % L
+    indices = (np.arange(L)[None, :] - np.arange(L)[:, None]) % L
+    window_matrix = d_window[indices]  # (L, L)
+    
+    # Multiplier signal par chaque fenêtre conjuguée, puis FFT sur chaque ligne
+    windowed = signal[None, :] * np.conjugate(window_matrix)  # (L, L)
+    result = np.fft.fft(windowed, axis=1)  # FFT sur chaque ligne
+    return result.T
 
 
-def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=False, show_full=False, d_window=None):
+def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=False, show_full=False, d_window=None, stdft:np.ndarray=None):
     print("Calcul de la FSTDFT...")
     
-    if d_window is not None:
-        result_raw = fstdft(signal=signal, d_window=d_window)
+    if stdft is None:
+        if d_window is not None:
+            result_raw = fstdft(signal=signal, d_window=d_window)
+        else:
+            result_raw = fstdft(signal=signal)
     else:
-        result_raw = fstdft(signal=signal)
+        result_raw = stdft[:]
     
     if not show_full:
         result = result_raw[:L//2,:]
     else:
         result = result_raw[:,:]
+    
     if linear:
         result = np.abs(result)
     else:
