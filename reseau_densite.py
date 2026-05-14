@@ -26,9 +26,6 @@ from itertools import product
 #     return signal
 
 def reconstruct_signal_from_lattice(coefs, window, dual_window=None, lattice=None):
-    """
-    Reconstruit un signal à partir de coefficients Gabor sur un lattice donné.
-    """
     N = coefs.shape[0]
     signal = np.zeros(N, dtype=np.complex128)
     
@@ -102,38 +99,6 @@ def plot_lattice(lattice):
     return
     
     
-    # Obtenir les valeurs uniques et triées
-    x_unique = np.sort(np.unique(lattice[:, 0]))
-    y_unique = np.sort(np.unique(lattice[:, 1]))
-
-    # Créer une matrice pour imshow
-    # Ici je crée une matrice avec des valeurs aléatoires pour démonstration
-    # Vous pouvez remplacer par vos propres données
-    matrix = np.random.rand(len(y_unique), len(x_unique))
-
-    # Créer la figure
-    plt.figure(figsize=(12, 8))
-
-    # Afficher l'image avec imshow
-    # extent définit les limites: [gauche, droite, bas, haut]
-    extent = [x_unique[0], x_unique[-1], y_unique[0], y_unique[-1]]
-    plt.imshow(matrix, extent=extent, origin='lower', aspect='auto', cmap='viridis')
-
-    # Tracer les points en noir par-dessus
-    plt.scatter(lattice[:, 0], lattice[:, 1], 
-            color='black', s=50, zorder=5, marker='s')
-
-    # Ajouter les lignes de la grille
-    plt.xticks(x_unique)
-    plt.yticks(y_unique)
-    plt.grid(True, color='white', linestyle='-', linewidth=1, alpha=0.7)
-
-    plt.xlabel('k')
-    plt.ylabel('l')
-    plt.title('Grille avec imshow et points du lattice')
-    plt.colorbar(label='Valeurs')
-    plt.tight_layout()
-    plt.show()
 
 if __name__ == "__main__":
     # fig, axes = plt.subplots(6, 1, figsize=(14, 10)) ## changer 1er argument accordement

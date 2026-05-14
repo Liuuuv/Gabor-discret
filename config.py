@@ -3,7 +3,7 @@
 ############# BEGIN INFOS #############
 # config file, change settings here
 #
-# (file imported by other files)
+# (this file is imported by other files)
 ############# END INFOS ###############
 
 
@@ -11,6 +11,16 @@ from signal_test import signal_test
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
+from enum import Enum, auto
+
+class StudiedSignal(Enum):
+    THEORETICAL_REF = auto()
+    PRACTICAL_SIGNAL = auto()
+
+
+
+# studied_signal: StudiedSignal = StudiedSignal.THEORETICAL_REF
+studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
 
 ############# WINDOWS #############
 def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de largeur donnée)
@@ -28,7 +38,8 @@ def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l
 
 def gaussian(sigma: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de taille donnée)
     assert sigma > 0
-    return lambda t: np.exp(-np.pi*(t/sigma)**2) / sigma
+    return lambda t: np.exp(-np.pi*(t/sigma)**2) * (2**0.25 * sigma)
+    # return lambda t: np.exp(-np.pi*(t/sigma)**2) * (2 ** 0.25 / (sigma ** 0.5))
     # return lambda t: np.exp(-np.pi*(t/sigma)**2)
 
 def gaussian_comp_supp(sigma: float):
@@ -67,67 +78,95 @@ def test_window(sigma: float):
 
 ############# WINDOWS #############
 
-min_time = 0.0
-max_time = 1.0
 
-# min_time = 2.0
-# max_time = 5.0
+match studied_signal:
+    case StudiedSignal.THEORETICAL_REF:
+        min_time = 0.0
+        max_time = 1.0
+    case StudiedSignal.PRACTICAL_SIGNAL:
+        # min_time = 2.0
+        # max_time = 5.0
+        
+        # min_time = 22.5
+        # max_time = 25.5
+        
+        min_time = 22.5
+        max_time = 24.5
 
 
-duration = max_time - min_time
+
+
+
+
+
 
 
 ############ LOAD MP3 FILE ############
-# chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_sped_up.mp3"
-# chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_piano.mp3"
-chemin_fichier = "TERTrace/python/kawaki_wo_ameku.wav"
-# signal, sr = librosa.load(chemin_fichier, sr=None)
-signal, sr = librosa.load(chemin_fichier, sr=1500)
-# signal, sr = librosa.load(chemin_fichier, sr=500)
+match studied_signal:
+    case StudiedSignal.THEORETICAL_REF:
+        signal, sr = signal_test, len(signal_test) # ref
+
+        # signal = np.sin(2 * np.pi * 200 * time) # signal ref 2
+        
+        ## q=2
+        # alpha: int = 50
+        # beta: int = 5
+
+        ## q=2
+        alpha: int = 25
+        beta: int = 10
+
+        ## q=4
+        # alpha: int = 25
+        # beta: int = 5
+        
+    case StudiedSignal.PRACTICAL_SIGNAL:
+        # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
+        # chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_sped_up.mp3"
+        # chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_piano.mp3"
+        chemin_fichier = "TERTrace/python/kawaki_wo_ameku.wav"
+        
+        # signal, sr = librosa.load(chemin_fichier, sr=None)
+        # signal, sr = librosa.load(chemin_fichier, sr=4000)
+        signal, sr = librosa.load(chemin_fichier, sr=2000)
+
+        
+        alpha: int = 5
+        beta: int = 10
 
 
-signal, sr = signal_test, len(signal_test) # ref
 
-# signal = np.sin(2 * np.pi * 200 * time) # signal ref 2
+
+
 
 signal = signal[int(sr * min_time):int(sr * max_time)]
 
 L = len(signal)
+duration = max_time - min_time
 
 ## L_sampling = [0, L//2[ U [-L//2, 0[ | to encode C^L vectors
 L_sampling = np.arange(0, L, dtype=np.complex128)
 L_sampling[L//2:] = np.arange(-L//2, 0, dtype=np.complex128)
 
-## q=2
-# alpha: int = 50
-# beta: int = 5
 
-## q=2
-alpha: int = 25
-beta: int = 10
-
-## q=4
-# alpha: int = 25
-# beta: int = 5
 
 
 ## autre + pas signal_ref
-# alpha: int = 15
-# beta: int = 15
+
 
 beta_t = L//beta
 alpha_t = L//alpha
 
 
 
-################ BEGIN TOOLS ################
+################ BEGIN TOOLS #################
 def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
     if normalize:
         return window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
         # return window(L_sampling/L) # il faut plot [0,1]
     else:
         return window(L_sampling/length)
+
 # def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
 #     discretized_window = window(np.linspace(-0.5, 0.5, length, dtype=np.complex64))
 #     d_window_ = discretized_window.copy()
@@ -140,7 +179,7 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
-sigma = 0.1
+sigma = 0.05
 window = gaussian(sigma) 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)

@@ -7,6 +7,8 @@ from dual_frame import compute_dual_window
 from zak import compute_alternate_dual_window, zak_transform, dual_dir_base_vec
 from base_orth import approximate_window_from_dual_dir
 from base_orth import build_xi
+
+
 from tools import*
 from config import*
 
@@ -45,17 +47,46 @@ def ft(signal):
     return result
 
 
-def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: int=1):
+# def reconstruct_signal(coefs, window, dual_window = None, alpha: int=1, beta: int=1):
+#     print("Reconstruction du signal")
+#     N = coefs.shape[0]
+#     reconstructed_signal = np.zeros(N, dtype=np.complex128)
+#     if dual_window is None:
+#         dual_window = window
+#     for n in range(N):
+#         for k in np.arange(0, N, alpha):
+#             l = np.arange(0, N, beta)
+#             tm_dual = dual_window[n - k] * np.exp(1j * 2 * np.pi * (n/N) * l)
+#             reconstructed_signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
+#     return reconstructed_signal
+
+def reconstruct_signal(coefs, window, dual_window=None, alpha: int=1, beta: int=1):
     print("Reconstruction du signal")
     N = coefs.shape[0]
-    reconstructed_signal = np.zeros(N, dtype=np.complex128)
     if dual_window is None:
         dual_window = window
-    for n in range(N):
-        for k in np.arange(0, N, alpha):
-            l = np.arange(0, N, beta)
-            tm_dual = dual_window[n - k] * np.exp(1j * 2 * np.pi * (n/N) * l)
-            reconstructed_signal[n] += np.sum(tm_dual * coefs[::beta,k], dtype=np.complex128)
+    
+    k = np.arange(0, N, alpha)  # (N//alpha,)
+    l = np.arange(0, N, beta)   # (N//beta,)
+    n = np.arange(N)            # (N,)
+    
+    # dual_window[n - k] : (N, N//alpha)
+    dw = dual_window[(n[:, None] - k[None, :]) % N]
+    
+    # exp : (N, N//beta)
+    exp_matrix = np.exp(1j * 2 * np.pi * np.outer(n / N, l))
+    
+    # coefs[::beta, k] : (N//beta, N//alpha)
+    c = coefs[::beta][:, k]  # (N//beta, N//alpha)
+    
+    # Pour chaque n: sum_k sum_l dw[n,k] * exp[n,l] * c[l_idx, k_idx]
+    # = sum_k dw[n,k] * (exp[n,:] @ c[:,k])
+    # exp_matrix @ c : (N, N//alpha)
+    ec = exp_matrix @ c  # (N, N//alpha)
+    
+    # sum sur k
+    reconstructed_signal = np.sum(dw * ec, axis=1)
+    
     return reconstructed_signal
 
 
@@ -131,23 +162,23 @@ def plot_scipy_fstdft(signal, ax_index, window=None): ## SCIPY
     axes[ax_index].set_ylim(0, last_nonzero_y + 1)
 
 
-def plot_window(d_window, ax_index, label=""):
-    window_vis = d_window.copy()
-    window_vis[:L//2] = d_window[L//2:]
-    window_vis[L//2:] = d_window[:L//2]
+# def plot_window(d_window, ax_index, label=""):
+#     window_vis = d_window.copy()
+#     window_vis[:L//2] = d_window[L//2:]
+#     window_vis[L//2:] = d_window[:L//2]
     
-    axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.real(window_vis), color='blue', alpha=0.7, linewidth=0.7)
-    imag = np.imag(window_vis)
-    if (imag > 0.0).any():
-        axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window_vis), color='red', alpha=0.7, linewidth=0.7)
-    # axes[ax_index].set_xlabel("Progression")
-    # axes[ax_index].set_ylabel("Amplitude")
-    axes[ax_index].grid(True, alpha=0.3)
-    axes[ax_index].margins(0, x=None, y=None, tight=True)
+#     axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.real(window_vis), color='blue', alpha=0.7, linewidth=0.7)
+#     imag = np.imag(window_vis)
+#     if (imag > 0.0).any():
+#         axes[ax_index].plot(np.linspace(-0.5,0.5,L), np.imag(window_vis), color='red', alpha=0.7, linewidth=0.7)
+#     # axes[ax_index].set_xlabel("Progression")
+#     # axes[ax_index].set_ylabel("Amplitude")
+#     axes[ax_index].grid(True, alpha=0.3)
+#     axes[ax_index].margins(0, x=None, y=None, tight=True)
     
     
-    # axes[ax_index].plot(np.linspace(-0.5,0.5,L), discretize_window(window, True))
-    axes[ax_index].set_title(label)
+#     # axes[ax_index].plot(np.linspace(-0.5,0.5,L), discretize_window(window, True))
+#     axes[ax_index].set_title(label)
 
 
 def fast_stft(signal, x, window=lambda t: 1):

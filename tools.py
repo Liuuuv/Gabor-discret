@@ -1,7 +1,11 @@
 import numpy as np
+import time
+
 from signal_test import*
 from config import*
+from ease import*
 from zak_tools import*
+
 
 def create_subplots(shape: tuple, figsize:tuple=(14, 10)) -> tuple:
     return plt.subplots(*shape, figsize=figsize)
@@ -61,25 +65,38 @@ def fft(signal):
 #         result[i] = fft(signal * np.conjugate(translated_window))
 #     return result.transpose()
 
-def fstdft(signal, d_window=None):
+def fstdft(signal, d_window=None, only_grid:bool=False):
+    print("Calcul de la FSTDFT...")
+    start_time: float = time.time()
     if d_window is None:
         d_window = discretize_window(window)
     
+    
     L = len(signal)
+    
+    if not only_grid:
+        # Toutes les positions temporelles (dense)
+        x_indices = np.arange(L)
+    else:
+        # Sous-échantillonnage temporel
+        x_indices = np.arange(0, L, alpha)
     
     # Construire la matrice des fenêtres translatées en une seule opération
     # indices[i, k] = (k - i) % L
-    indices = (np.arange(L)[None, :] - np.arange(L)[:, None]) % L
+    indices = (np.arange(L)[None, :] - x_indices[:, None]) % L
     window_matrix = d_window[indices]  # (L, L)
     
     # Multiplier signal par chaque fenêtre conjuguée, puis FFT sur chaque ligne
     windowed = signal[None, :] * np.conjugate(window_matrix)  # (L, L)
     result = np.fft.fft(windowed, axis=1)  # FFT sur chaque ligne
-    return result.T
+    result = result.T
+    print(f"End calcul of FSTDFT, time {time.time() - start_time}s")
+    return result
 
 
-def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=False, show_full=False, d_window=None, stdft:np.ndarray=None):
-    print("Calcul de la FSTDFT...")
+def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=False, show_full=False, d_window=None, stdft:np.ndarray=None, plot_only_grid:bool=False):
+    print("plot_fstdft called...")
+    start_time: float = time.time()
     
     if stdft is None:
         if d_window is not None:
@@ -87,8 +104,7 @@ def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=F
         else:
             result_raw = fstdft(signal=signal)
     else:
-        result_raw = stdft[:]
-    
+        result_raw = np.copy(stdft)
     if not show_full:
         result = result_raw[:L//2,:]
     else:
@@ -114,12 +130,20 @@ def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=F
     
     
     if ax:
-        freq = np.linspace(0, L//2, len(signal)//2) if not show_full else np.linspace(0, L, len(signal))
-        # temps = np.arange(len(signal)) / sr
-        temps = np.linspace(min_time, max_time, int(duration * sr))
+        print("Plotting FSTDFT...")
+        if plot_only_grid:
+            freq = np.linspace(0, L//2, (len(signal)//2) // beta) if not show_full else np.linspace(0, L, len(signal) // beta)
+            temps = np.linspace(min_time, max_time, int(duration * sr) // alpha)
+        else:
+            freq = np.linspace(0, L//2, len(signal)//2) if not show_full else np.linspace(0, L, len(signal))
+            # temps = np.arange(len(signal)) / sr
+            temps = np.linspace(min_time, max_time, int(duration * sr))
         # freq = freq[:last_nonzero_y + 1]
         # ax.pcolormesh(temps, freq, result, shading='gouraud')
-        ax.pcolormesh(temps, freq, result)
+        if plot_only_grid:
+            ax.pcolormesh(temps, freq, result[::beta,::alpha])
+        else:
+            ax.pcolormesh(temps, freq, result)
         # axes[ax_index].set_yscale('log')
         if label != "":
             ax.set_title(label)
@@ -132,7 +156,8 @@ def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=F
         
         if plot_ref:
             plot_time_frequencies_reference(ax=ax)
-    
+            
+    print(f"End call of plot_fstdft, time {time.time() - start_time}s")
     return result_raw
 
 def scalar_product(signal1, signal2):

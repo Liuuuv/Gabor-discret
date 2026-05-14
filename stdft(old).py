@@ -137,7 +137,7 @@ print("shape ", COLOR.shape)
 # plt.imshow(COLOR, interpolation='bilinear')
 # plt.show()
 
-plt.close()
+# plt.close()
 print('djsdjszd')
 f, t, Zxx = fast_stft(signal=signal, x=temps, window=lambda t: np.exp(-(t*200)**2))
 plt.pcolormesh(t, f, Zxx, shading='gouraud')

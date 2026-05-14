@@ -6,6 +6,7 @@ import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from tools import*
 from config import*
+from base_import import*
 
 ## matrice circulante: [A_i] où A_i: np.ndarray
 
@@ -132,12 +133,8 @@ def circulant_inverse(C: np.ndarray):
     
     # 3. IFT sur les blocs inversés -> B_r
     # circlulant_ift retourne ifft * N, donc on divise par alpha_t
-    # B = circlulant_ift(C_fourier_inv) / alpha_t  # shape: (alpha_t, alpha, alpha)
-    B = circlulant_ift(C_fourier_inv) # shape: (alpha_t, alpha, alpha)
-    
-    print("C shape:", C.shape)
-    print("C_fourier shape:", C_fourier.shape)
-    print("B shape:", B.shape)
+    B = circlulant_ift(C_fourier_inv) / alpha_t  # shape: (alpha_t, alpha, alpha)
+    # B = circlulant_ift(C_fourier_inv) # shape: (alpha_t, alpha, alpha)
     
     return B
 
@@ -164,7 +161,7 @@ def shift(xs, n):
 
 
 
-def compute_dual_window(window, alpha=alpha, beta=beta):
+def compute_dual_window_slow(window, alpha=alpha, beta=beta):
     print("Calcul de la fenêtre duale canonique")
     
     S = construct_operator_matrix(d_window, alpha=alpha,beta=beta)
@@ -173,6 +170,20 @@ def compute_dual_window(window, alpha=alpha, beta=beta):
     # print(f"valeurs propres de S: max: {np.max(eigenvalues)}, min: {np.min(eigenvalues)}")
     # print(f"conditionnement de S:", np.linalg.cond(S))
     S_inv = np.linalg.inv(S)
+    # d_window = window(np.arange(L))
+    
+    dual_window = np.matmul(S_inv, d_window)
+    return dual_window
+
+def compute_dual_window(window, alpha=alpha, beta=beta):
+    print("Calcul de la fenêtre duale canonique")
+    
+    S = construct_operator_matrix(window=d_window)
+    
+    S_circ = construct_circulant(S, mean=False)
+    S_inv_circ = circulant_inverse(S_circ)
+    S_inv = construct_matrix_from_circulant(S_inv_circ)
+    
     # d_window = window(np.arange(L))
     
     dual_window = np.matmul(S_inv, d_window)
@@ -215,30 +226,7 @@ def compute_tight_frame(d_window, alpha=alpha, beta=beta, S=None):
 
 
 
-def plot_window(window_, ax, is_discrete=True, label="", custom_y_lim=0.0):
-    # if is_discrete:
-    #     window = window_.copy()
-    #     window[:L//2] = window_[L//2:]
-    #     window[L//2:] = window_[:L//2]
-    # else:
-    #     window = window_
-    window = window_.copy()
-    window[:L//2] = window_[L//2:]
-    window[L//2:] = window_[:L//2]
-    
-    
-    ax.plot(np.linspace(-0.5,0.5,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
-    ax.plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=1.0)
-    # ax.set_xlabel("Progression")
-    # ax.set_ylabel("Amplitude")
-    ax.grid(True, alpha=0.3)
-    
-    ax.margins(0, x=None, y=None, tight=True)
-    
-    # axes[ax_index].plot(np.linspace(-0.5,0.5,L), discretize_window(window, True))
-    ax.set_title(label)
-    if custom_y_lim:
-        ax.set_ylim(-custom_y_lim, custom_y_lim)
+
 
 
 def plot_complex_curve(curve_, ax, fig, color):
