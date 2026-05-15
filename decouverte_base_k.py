@@ -31,7 +31,7 @@ def plot_chi_zak(d_window, k, n, ax):
     # choice = 5
     # zak_gamma[:,alpha_t//q:] = choice
     
-    choices = np.zeros((alpha, alpha_t//q), np.complex64)
+    choices = np.zeros((alpha, alpha_t//q), np.complex128)
     # choices[::2,:] = 1
     # choices[1::2,:] = -1
     # for j in range(alpha):

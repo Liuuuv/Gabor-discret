@@ -19,8 +19,8 @@ class StudiedSignal(Enum):
 
 
 
-# studied_signal: StudiedSignal = StudiedSignal.THEORETICAL_REF
-studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
+studied_signal: StudiedSignal = StudiedSignal.THEORETICAL_REF
+# studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
 
 ############# WINDOWS #############
 from windows import*
@@ -81,6 +81,7 @@ match studied_signal:
         # signal, sr = librosa.load(chemin_fichier, sr=None)
         # signal, sr = librosa.load(chemin_fichier, sr=4000)
         signal, sr = librosa.load(chemin_fichier, sr=4000)
+        # signal, sr = librosa.load(chemin_fichier)
 
         
         alpha: int = 2000
@@ -120,7 +121,7 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
         return window(L_sampling/length)
 
 # def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
-#     discretized_window = window(np.linspace(-0.5, 0.5, length, dtype=np.complex64))
+#     discretized_window = window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
 #     d_window_ = discretized_window.copy()
 #     d_window_[:L//2] = discretized_window[L//2:]
 #     d_window_[L//2:] = discretized_window[:L//2]
@@ -132,11 +133,11 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
 
-sigma = 0.05
+sigma = 0.1
 window = gaussian(sigma)
 
-# l = 0.1
-# window = blackman_window(l)
+l = 0.1
+window = blackman_window(l)
 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)

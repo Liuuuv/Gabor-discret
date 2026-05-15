@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from matplotlib.widgets import Slider
 
 from signal_test import*
 from config import*
@@ -258,7 +259,7 @@ def approximate_window_from_dual_dir(d_test_window, ax_to_plot=None, ax_phase=No
     
     K = np.arange(alpha)
     L_ = np.arange(alpha_t - beta)
-    result_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex64)
+    result_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
@@ -287,7 +288,7 @@ def approximate_window_from_dual_dir(d_test_window, ax_to_plot=None, ax_phase=No
         plt.colorbar(mesh_phase, ax=ax_phase)
         ax_phase.set_title("Phase des coefficients dans K^\perp")
     
-    reconstructed = np.zeros(L, dtype=np.complex64)
+    reconstructed = np.zeros(L, dtype=np.complex128)
     for k in K:
         for l in L_:
             reconstructed += result_raw[k, l] * basis[(k,l + beta)]
@@ -338,3 +339,5 @@ def build_orthonormal_xi(Zg, xi):
                 basis[(k,n)] = v
 
     return basis
+
+

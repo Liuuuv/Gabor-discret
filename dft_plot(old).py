@@ -36,7 +36,7 @@ def plot_signal(signal, ax_index):
 def ft(signal):
     L = len(signal) # nombre d'échantillons
     n = np.arange(L) # indices (somme sur n)
-    result = np.zeros(L, dtype=np.complex64)
+    result = np.zeros(L, dtype=np.complex128)
     for k in range(L):
         result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / L))
     return result
@@ -48,7 +48,7 @@ def fft(signal):
 def fstdft(signal, window=lambda t: 1):
     N = len(signal)
     temps = np.arange(N) / sr
-    result = np.zeros((N, N), dtype=np.complex64)
+    result = np.zeros((N, N), dtype=np.complex128)
     for i in range(N):
         x = temps[i]
         if x < 0:

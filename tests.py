@@ -1,388 +1,50 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
-import time
-
+import numpy as np
+import scipy
+from signal_test import signal_test, plot_time_frequencies_reference
 from config import*
+from tools import*
+from methode_iterative import approximate_compact_support_iter
+# from zak import plot_zak_transform, dual_dir_base_vec
+from base_import import*
+from zak_tools import*
+from zak import*
+from decomposition_K_Kperp import*
 
 
-# ─────────────────────────────────────────────
-#  Fenêtre gaussienne discrète
-# ─────────────────────────────────────────────
-
-def gaussian_window(L: int, sigma: float) -> np.ndarray:
-    """Fenêtre gaussienne périodisée (longueur L, variance sigma²).
-    
-    La gaussienne est centrée en 0 et enroulée modulo L pour
-    respecter la périodicité exigée par la FSTDFT discrète.
-    
-    Args:
-        L     : longueur du signal (et de la fenêtre)
-        sigma : écart-type (en échantillons)
-
-    Returns:
-        np.ndarray de longueur L, normalisée en énergie.
-    """
-    t = np.arange(L)
-    # Périodisation sur [-L/2, L/2]
-    t_centered = t - L // 2
-    g = np.exp(-t_centered**2 / (2 * sigma**2))
-    # Normalisation L² (énergie unitaire)
-    g /= np.linalg.norm(g)
-    # Remettre dans l'ordre "causal" (fft-shift inverse)
-    g = np.roll(g, L // 2)
-    return g
-
-
-# ─────────────────────────────────────────────
-#  FSTDFT vectorisée (reprend ta logique)
-# ─────────────────────────────────────────────
-
-def fstdft_gaussian(signal: np.ndarray, sigma: float) -> np.ndarray:
-    """Calcule la FSTDFT du signal avec une fenêtre gaussienne.
-
-    Args:
-        signal : signal 1D de longueur L
-        sigma  : écart-type de la fenêtre gaussienne (en échantillons)
-
-    Returns:
-        np.ndarray de forme (L, L), complexe.
-        Axe 0 → fréquence, axe 1 → temps.
-    """
-    L = len(signal)
-    d_window = gaussian_window(L, sigma)
-
-    x_indices = np.arange(L)
-    # Matrice des indices décalés : indices[i, k] = (k - i) % L
-    indices = (np.arange(L)[None, :] - x_indices[:, None]) % L
-    window_matrix = d_window[indices]            # (L, L)
-
-    windowed = signal[None, :] * np.conjugate(window_matrix)  # (L, L)
-    result = np.fft.fft(windowed, axis=1).T      # (L, L), axe 0 = freq
-
-    return result
-
-
-# ─────────────────────────────────────────────
-#  Affichage interactif avec slider sigma
-# ─────────────────────────────────────────────
-
-def plot_fstdft_gaussian_slider(
-    signal: np.ndarray,
-    sr: int = 1,
-    sigma_init: float = None,
-    sigma_min: float = 1.0,
-    sigma_max: float = None,
-    n_sigmas: int = 40,
-    show_full: bool = False,
-    linear: bool = False,
-    tolerance: float = 0.005,
-    min_time: float = 0.0,
-    max_time: float = None,
-):
-    """Affiche la FSTDFT avec fenêtre gaussienne et un slider pour sigma.
-
-    Le slider est discret : il choisit parmi `n_sigmas` valeurs uniformément
-    réparties entre sigma_min et sigma_max. Cela permet de précalculer toutes
-    les FSTDFT et de rendre le slider instantané.
-
-    Args:
-        signal     : signal 1D numpy
-        sr         : fréquence d'échantillonnage (pour l'axe des fréquences)
-        sigma_init : valeur initiale de sigma (défaut : L/8)
-        sigma_min  : sigma minimal (défaut : 1.0)
-        sigma_max  : sigma maximal (défaut : L/4)
-        n_sigmas   : nombre de valeurs de sigma précalculées
-        show_full  : si True, affiche les fréquences négatives aussi
-        linear     : si True, affiche |STFT| au lieu de |STFT|²
-        tolerance  : seuil sous lequel on met à 0 (relatif au max)
-        min_time   : valeur min de l'axe temporel
-        max_time   : valeur max de l'axe temporel (défaut : len/sr)
-    """
-    L = len(signal)
-
-    if sigma_max is None:
-        sigma_max = L / 4
-    if sigma_init is None:
-        sigma_init = L / 8
-    if max_time is None:
-        max_time = L / sr
-
-    sigma_values = np.linspace(sigma_min, sigma_max, n_sigmas)
-
-    # ── Précalcul de toutes les FSTDFT ──────────────────────────────────────
-    print(f"Précalcul de {n_sigmas} FSTDFT… (L={L})")
-    all_results = []
-    for i, sigma in enumerate(sigma_values):
-        raw = fstdft_gaussian(signal, sigma)
-        if show_full:
-            spec = raw[:, :]
-        else:
-            spec = raw[: L // 2, :]
-        if linear:
-            spec = np.abs(spec)
-        else:
-            spec = np.abs(spec) ** 2
-        m = np.max(spec)
-        if m > 0:
-            spec /= m
-        spec[spec < tolerance] = 0.0
-        all_results.append(spec[::beta,::alpha].astype(np.float32))
-        if (i + 1) % 10 == 0 or i == n_sigmas - 1:
-            print(f"  {i+1}/{n_sigmas} terminées")
-    print("Précalcul terminé.")
-
-    # ── Axes ────────────────────────────────────────────────────────────────
-    n_freq = (L // 2) // beta if not show_full else L // beta
-    freq_axis = np.linspace(0, sr // 2, n_freq) if not show_full else np.linspace(0, sr, L // beta)
-    time_axis = np.linspace(min_time, max_time, L//alpha)
-
-    # ── Figure ──────────────────────────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.subplots_adjust(bottom=0.18, top=0.93)
-
-    idx_init = int(np.argmin(np.abs(sigma_values - sigma_init)))
-    img = ax.pcolormesh(
-        time_axis, freq_axis, all_results[idx_init],
-        shading="auto", cmap="inferno"
-    )
-
-    ax.set_title(f"FSTDFT – fenêtre gaussienne  (σ = {sigma_values[idx_init]:.1f})")
-    ax.set_xlabel("Temps" if sr == 1 else "Temps (s)")
-    ax.set_ylabel("Fréquence (Hz)" if sr != 1 else "Fréquence (bins)")
-    ax.set_xlim(min_time, max_time)
-    ax.set_ylim(0, n_freq - 1)
-    cbar = fig.colorbar(img, ax=ax, label="Énergie normalisée")
-
-    # ── Slider ──────────────────────────────────────────────────────────────
-    ax_slider = plt.axes([0.15, 0.05, 0.72, 0.04])
-    slider = Slider(
-        ax=ax_slider,
-        label="σ (échantillons)",
-        valmin=0,
-        valmax=n_sigmas - 1,
-        valinit=idx_init,
-        valstep=1,
-        color="#e07b39",
-    )
-    # Afficher la vraie valeur de sigma sous le slider
-    sigma_text = fig.text(
-        0.5, 0.01,
-        f"σ = {sigma_values[idx_init]:.2f} échantillons",
-        ha="center", fontsize=10, color="gray"
-    )
-
-    def update(val):
-        idx = int(slider.val)
-        sigma_cur = sigma_values[idx]
-        img.set_array(all_results[idx].ravel())
-        img.set_clim(0, np.max(all_results[idx]) or 1)
-        ax.set_title(f"FSTDFT – fenêtre gaussienne  (σ = {sigma_cur:.1f})")
-        sigma_text.set_text(f"σ = {sigma_cur:.2f} échantillons")
-        fig.canvas.draw_idle()
-
-    slider.on_changed(update)
-
-    plt.show()
-    return fig, slider  # garder une référence pour éviter le GC
-
-def plot_fstdft_gaussian_grid_slider(
-    signal: np.ndarray,
-    sr: int = 1,
-    sigma_init: float = None,
-    sigma_min: float = 1.0,
-    sigma_max: float = None,
-    n_sigmas: int = 40,
-    show_full: bool = False,
-    linear: bool = False,
-    tolerance: float = 0.0,
-    min_time: float = 0.0,
-    max_time: float = None,
-    point_size: float = 8.0,
-):
-    """Affiche uniquement les points de la FSTDFT sur la grille (alpha, beta).
- 
-    Seuls les échantillons temporels aux indices multiples de `alpha` et
-    les bins fréquentiels aux indices multiples de `beta` sont affichés,
-    sous forme de nuage de points colorés (scatter).
- 
-    Args:
-        signal     : signal 1D numpy
-        alpha      : pas de sous-échantillonnage temporel
-        beta       : pas de sous-échantillonnage fréquentiel
-        sr         : fréquence d'échantillonnage
-        sigma_init : valeur initiale de sigma
-        sigma_min  : sigma minimal
-        sigma_max  : sigma maximal (défaut : L/4)
-        n_sigmas   : nombre de valeurs de sigma précalculées
-        show_full  : si True, conserve les fréquences négatives
-        linear     : si True, affiche |STFT| au lieu de |STFT|²
-        tolerance  : valeur minimale affichée (relatif au max)
-        min_time   : borne temporelle inférieure de l'axe
-        max_time   : borne temporelle supérieure de l'axe
-        point_size : taille de base des marqueurs
-    """
-    L = len(signal)
- 
-    if sigma_max is None:
-        sigma_max = L / 4
-    if sigma_init is None:
-        sigma_init = L / 8
-    if max_time is None:
-        max_time = L / sr
- 
-    sigma_values = np.linspace(sigma_min, sigma_max, n_sigmas)
- 
-    # ── Indices de la grille ─────────────────────────────────────────────────
-    n_freq_full = L if show_full else L // 2
-    time_indices = np.arange(0, L, alpha)           # positions temporelles
-    freq_indices = np.arange(0, n_freq_full, beta)  # bins fréquentiels
- 
-    # Coordonnées physiques correspondantes
-    time_coords_grid = np.linspace(min_time, max_time, L)[time_indices]
-    freq_coords_grid = (
-        np.linspace(0, sr, L) if show_full
-        else np.linspace(0, sr // 2, L // 2)
-    )[freq_indices]
- 
-    # Grille 2D des coordonnées pour le scatter
-    T_mesh, F_mesh = np.meshgrid(time_coords_grid, freq_coords_grid)
-    t_flat = T_mesh.ravel()
-    f_flat = F_mesh.ravel()
- 
-    # ── Précalcul des amplitudes sur grille ──────────────────────────────────
-    print(f"Précalcul de {n_sigmas} FSTDFT sur grille α={alpha}, β={beta}… (L={L})")
-    all_values = []   # liste de tableaux 1D (amplitudes aplaties)
- 
-    for i, sigma in enumerate(sigma_values):
-        raw = fstdft_gaussian(signal, sigma)          # (L, L)
-        spec = raw[:n_freq_full, :]                   # fréquences retenues
- 
-        # Sous-échantillonnage sur la grille
-        spec_grid = spec[np.ix_(freq_indices, time_indices)]  # (n_f, n_t)
- 
-        if linear:
-            vals = np.abs(spec_grid)
-        else:
-            vals = np.abs(spec_grid) ** 2
- 
-        m = np.max(vals)
-        if m > 0:
-            vals /= m
-        vals[vals < tolerance] = 0.0
-        all_values.append(vals.ravel().astype(np.float32))
- 
-        if (i + 1) % 10 == 0 or i == n_sigmas - 1:
-            print(f"  {i+1}/{n_sigmas} terminées")
-    print("Précalcul terminé.")
- 
-    # ── Figure ───────────────────────────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(12, 6))
-    plt.subplots_adjust(bottom=0.18, top=0.93)
- 
-    idx_init = int(np.argmin(np.abs(sigma_values - sigma_init)))
-    vals0 = all_values[idx_init]
- 
-    sc = ax.scatter(
-        t_flat, f_flat,
-        c=vals0,
-        s=point_size,
-        cmap="inferno",
-        vmin=0, vmax=1,
-        linewidths=0,
-    )
-    
-    ## ne marche pas ::((((((
-    # sc = ax.pcolormesh(
-    #     t_flat, f_flat, vals0,
-    #     shading="auto", cmap="inferno"
-    # )
- 
-    ax.set_title(
-        f"FSTDFT grille (α={alpha}, β={beta}) – "
-        f"fenêtre gaussienne  (σ = {sigma_values[idx_init]:.1f})"
-    )
-    ax.set_xlabel("Temps" if sr == 1 else "Temps (s)")
-    ax.set_ylabel("Fréquence (Hz)" if sr != 1 else "Fréquence (bins)")
-    ax.set_xlim(min_time, max_time)
-    ax.set_ylim(0, freq_coords_grid[-1] * 1.05)
-    fig.colorbar(sc, ax=ax, label="Énergie normalisée")
- 
-    # ── Slider ───────────────────────────────────────────────────────────────
-    ax_slider = plt.axes([0.15, 0.05, 0.72, 0.04])
-    slider = Slider(
-        ax=ax_slider,
-        label="σ (échantillons)",
-        valmin=0,
-        valmax=n_sigmas - 1,
-        valinit=idx_init,
-        valstep=1,
-        color="#39a0e0",
-    )
-    sigma_text = fig.text(
-        0.5, 0.01,
-        f"σ = {sigma_values[idx_init]:.2f} échantillons  |  "
-        f"{len(time_indices)} pts temps × {len(freq_indices)} pts freq "
-        f"= {len(t_flat)} points",
-        ha="center", fontsize=9, color="gray"
-    )
- 
-    def update(val):
-        idx = int(slider.val)
-        sigma_cur = sigma_values[idx]
-        sc.set_array(all_values[idx])
-        ax.set_title(
-            f"FSTDFT grille (α={alpha}, β={beta}) – "
-            f"fenêtre gaussienne  (σ = {sigma_cur:.1f})"
-        )
-        sigma_text.set_text(
-            f"σ = {sigma_cur:.2f} échantillons  |  "
-            f"{len(time_indices)} pts temps × {len(freq_indices)} pts freq "
-            f"= {len(t_flat)} points"
-        )
-        fig.canvas.draw_idle()
- 
-    slider.on_changed(update)
- 
-    plt.show()
-    return fig, slider
-
-# ─────────────────────────────────────────────
-#  Exemple d'utilisation autonome
-# ─────────────────────────────────────────────
+from matplotlib.widgets import Slider
 
 if __name__ == "__main__":
-    # Signal de test : somme de sinusoïdes avec glissement de fréquence
-    # sr   = 500           # Hz
-    # dur  = 1.0           # secondes
-    # L    = int(sr * dur) # 8000 échantillons
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    plt.subplots_adjust(top=0.95, bottom=0.15, hspace=0.3)
 
-    # t = np.linspace(0, dur, L, endpoint=False)
-    # signal = (
-    #     0.8 * np.sin(2 * np.pi * 440 * t)          # La4
-    #     + 0.5 * np.sin(2 * np.pi * 880 * t)        # La5
-    #     + 0.3 * np.sin(2 * np.pi * (200 + 400*t) * t)  # chirp
-    #     + 0.05 * np.random.randn(L)                # bruit
-    # )
+    plot_window(d_window=d_window, ax=axes[0])
 
-    plot_fstdft_gaussian_slider(
-        signal,
-        sr=sr,
-        sigma_min=1,
-        sigma_max=30,
-        n_sigmas=50,
-        show_full=False,
-        linear=True,
-        tolerance=0.0
-    )
-    
-    # plot_fstdft_gaussian_grid_slider(
-    #     signal,
-    #     sr=sr,
-    #     sigma_min=1,
-    #     sigma_max=30,
-    #     n_sigmas=50,
-    #     show_full=False,
-    #     linear=True,
-    #     tolerance=0.0
-    # )
+    def update(_=None):
+        nu   = int(s_nu.val)
+        mult = s_mult.val
+
+        zak_new_window = zak_transform_fast(d_window=d_window).copy()
+        zak_new_window[:, nu]        *= mult
+        zak_new_window[:, beta + nu] *= mult
+        new_window = zak_inverse(zak_new_window)
+
+        axes[1].cla()
+        plot_window(d_window=new_window, ax=axes[1])
+
+        cn_window     = plot_cn(d_window=d_window)
+        cn_new_window = plot_cn(d_window=new_window)
+        print(np.abs(cn_window - cn_new_window))
+
+        fig.canvas.draw_idle()
+
+    ax_nu   = plt.axes([0.15, 0.07, 0.72, 0.03])
+    ax_mult = plt.axes([0.15, 0.03, 0.72, 0.03])
+    s_nu    = Slider(ax_nu,   "nu",   0,   beta - 1, valinit=5,   valstep=1)
+    s_mult  = Slider(ax_mult, "mult", -20, 20,       valinit=5.0, valstep=0.1)
+
+    s_nu.on_changed(update)
+    s_mult.on_changed(update)
+
+    update()  # affichage initial
+    plt.show()

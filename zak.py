@@ -35,7 +35,7 @@ def compute_alternate_dual_window_orth(d_window):
     # choice = 5
     # zak_gamma[:,alpha_t//q:] = choice
     
-    choices = np.zeros((alpha, alpha_t - alpha_t//q), np.complex64)
+    choices = np.zeros((alpha, alpha_t - alpha_t//q), np.complex128)
     len_nu = alpha_t - alpha_t//q
     # choices[::2,:] = 1
     # choices[1::2,:] = -1
@@ -132,7 +132,20 @@ def dual_dir_base_vec(k, n):
 #     ax.set_title(label)
 #     return result_raw
 
-def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None, smart:bool=False):
+def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None, piecewise:bool=False):
+    """
+
+    Args:
+        d_window (_type_, optional): _description_. Defaults to None.
+        ax (_type_, optional): _description_. Defaults to None.
+        label (str, optional): _description_. Defaults to "".
+        bars (bool, optional): _description_. Defaults to False.
+        zak_precomputed (_type_, optional): _description_. Defaults to None.
+        piecewise (bool, optional): Performs the piecewise zaktransform is p==1. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
     if bars:
         return plot_zak_transform_bars(d_window, ax, label="")
     print("Plotting zak transform", label)
@@ -141,7 +154,7 @@ def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomp
     
     if zak_precomputed is None:
         result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
-        if smart and p==1:
+        if piecewise and p==1:
             for j in J:
                 for nu in NU:
                     result_raw[j, nu] = np.sum(zak_transform(d_window, j, nu - beta * np.arange(q)))
@@ -240,7 +253,7 @@ def plot_zak_transform_bars(d_window, ax, label=""):
 
 def plot_A(d_window, ax):
     
-    result = np.zeros((alpha, alpha_t), dtype=np.complex64)
+    result = np.zeros((alpha, alpha_t), dtype=np.complex128)
     J = np.arange(alpha)
     NU = np.arange(alpha_t)
     
@@ -285,7 +298,7 @@ if __name__ == "__main__":
     
     # dual_window = compute_dual_window(d_window)
     ax3d = fig.add_subplot(*windows, 1, projection='3d')
-    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False, smart=True)
+    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False, piecewise=True)
     # zak = plot_zak_transform(dual_window, ax3d, label="Fenêtre duale", bars=False)
     # plot_A(d_window, ax3d)
     
@@ -294,7 +307,7 @@ if __name__ == "__main__":
     
     
     # # xi = build_xi()
-    # # test = np.zeros(L, dtype=np.complex64)
+    # # test = np.zeros(L, dtype=np.complex128)
     # # for j in range(alpha):
     # #     for nu in range(alpha_t - beta):
     # #         t = nu/(alpha_t - beta)
@@ -349,7 +362,7 @@ if __name__ == "__main__":
     # plot_window(alternate_dual_window, axes[2], label="alternate_dual_window",)
     # orth = compute_alternate_dual_window_orth(d_window)
     # plot_window(orth, axes[3], label="",)
-    # # test = np.zeros(L, dtype=np.complex64)
+    # # test = np.zeros(L, dtype=np.complex128)
     # # for j in range(alpha):
     # #     test += .01 * dual_dir_base_vec(j, 10)
     # # plot_window(test, axes[3], "orth",)

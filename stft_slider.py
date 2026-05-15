@@ -35,7 +35,7 @@ def gaussian_window(L: int, sigma: float) -> np.ndarray:
 
 
 # ─────────────────────────────────────────────
-#  FSTDFT vectorisée (reprend ta logique)
+#  FSTDFT vectorisée
 # ─────────────────────────────────────────────
 
 def fstdft_gaussian(signal: np.ndarray, sigma: float) -> np.ndarray:

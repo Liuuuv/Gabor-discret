@@ -76,7 +76,7 @@ def approximate_window_from_k(d_test_window, ax_to_plot=None, ax_phase=None, bas
     
     K = np.arange(alpha)
     L_ = np.arange(beta)
-    result_raw = np.zeros((alpha, beta), dtype=np.complex64)
+    result_raw = np.zeros((alpha, beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
@@ -105,7 +105,7 @@ def approximate_window_from_k(d_test_window, ax_to_plot=None, ax_phase=None, bas
         plt.colorbar(mesh_phase, ax=ax_phase)
         ax_phase.set_title("Phase des coefficients dans K")
     
-    reconstructed = np.zeros(L, dtype=np.complex64)
+    reconstructed = np.zeros(L, dtype=np.complex128)
     for k in K:
         for l in L_:
             reconstructed += result_raw[k, l] * chi[(k,l)]
@@ -120,13 +120,13 @@ def testing(d_test_window, ax_to_plot=None, ax_phase=None, basis=None, fig=None)
     
     K = np.arange(alpha)
     L_ = np.arange(beta)
-    result_raw_window = np.zeros((alpha, beta), dtype=np.complex64)
+    result_raw_window = np.zeros((alpha, beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
             result_raw_window[k, l] = scalar_product(chi[(k,l)], d_window)
             
-    result_raw_dual = np.zeros((alpha, beta), dtype=np.complex64)
+    result_raw_dual = np.zeros((alpha, beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
@@ -158,7 +158,7 @@ def testing(d_test_window, ax_to_plot=None, ax_phase=None, basis=None, fig=None)
         plt.colorbar(mesh_phase, ax=ax_phase)
         ax_phase.set_title("Phase des coefficients dans K dsds")
     
-    reconstructed = np.zeros(L, dtype=np.complex64)
+    reconstructed = np.zeros(L, dtype=np.complex128)
     for k in K:
         for l in L_:
             reconstructed += result_raw[k, l] * chi[(k,l)]

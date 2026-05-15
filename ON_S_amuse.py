@@ -72,6 +72,7 @@ if __name__ == '__main__':
     )
     
     sf.write('TERTrace/python/fichier_entree.wav', signal, samplerate=sr)
+    
     plot_signal(signal=signal, ax=axes[0])
     
     

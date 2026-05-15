@@ -27,7 +27,7 @@ def square_partial_sum(coefs, d_dual_window, size_alpha, size_beta, ax=None):
     
     # print("range k", -alpha_t//2, alpha_t//2)
     # print("range l", -beta_t//2, beta_t//2)
-    signal = np.zeros(L, dtype=np.complex64)
+    signal = np.zeros(L, dtype=np.complex128)
     
     x = []
     y = []
@@ -58,7 +58,7 @@ def square_partial_sum(coefs, d_dual_window, size_alpha, size_beta, ax=None):
 
 def square_partial_sum_fft(coefs, d_dual_window, size_alpha, size_beta, ax=None):
     L = len(d_dual_window)
-    signal = np.zeros(L, dtype=np.complex64)
+    signal = np.zeros(L, dtype=np.complex128)
     
     k_vals = np.arange(-alpha_t//2, alpha_t//2)
     l_vals = np.arange(-beta_t//2, beta_t//2)

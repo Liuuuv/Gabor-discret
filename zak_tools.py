@@ -57,10 +57,10 @@ def zak_transform(d_window, j, nu):
 
 
 
-def plot_cn(d_window, ax=None, fig=None):
+def plot_cn(d_window, ax=None, fig=None, ax_phase=None):
     zak_g = zak_transform_fast(d_window)
     
-    c_nk_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex64)
+    c_nk_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex128)
     for k in range(alpha):
         for n in range(alpha_t - beta):
             n_ = n + beta
@@ -79,15 +79,27 @@ def plot_cn(d_window, ax=None, fig=None):
         c_nk = np.abs(c_nk)
         # c_nk[(np.abs(c_nk - 1) > 10e-11)] = 0
         # c_nk[(np.abs(c_nk - 1) <= 10e-11)] = 1
-        mesh = ax.pcolormesh(np.arange(alpha), np.arange(alpha_t - beta), c_nk)
+        mesh = ax.pcolormesh(np.arange(alpha), np.arange(alpha_t - beta), c_nk, cmap='inferno')
         ax.set_ylabel("n")
+        ax.set_xlabel("k")
+        ax.set_title("ck[n] (module)")
         # m = axes[2].heatmap(result, cmap='dusk')
-        cbar = fig.colorbar(mesh, ax=ax, label='Valeur')
+        cbar = fig.colorbar(mesh, ax=ax)
+    if ax_phase is not None:
+        result = c_nk_raw.copy()
+        mask = (np.abs(result) < 10e-10) ## contrer les présupposées erreurs numériques
+        result[mask] = np.nan
+        phase = np.angle(result)
+        phase = np.transpose(phase)
+        mesh_phase = ax_phase.pcolormesh(np.arange(alpha), np.arange(alpha_t - beta), phase, shading='auto', cmap='hsv', vmin=-np.pi, vmax=np.pi)
+        # plt.colorbar(mesh_phase, ax=ax_phase, label='Phase [rad]')
+        plt.colorbar(mesh_phase, ax=ax_phase)
+        ax_phase.set_title("Phase des ck[n]")
     return c_nk_raw
 
 
 def zak_inverse(zak): ## zak sur alpha, alpha_t
-    vec = np.zeros(L, np.complex64)
+    vec = np.zeros(L, np.complex128)
     for n in np.arange(L):
         for nu in np.arange(alpha_t):
             phase = np.exp(2j * np.pi * nu * (n//alpha) / alpha_t)

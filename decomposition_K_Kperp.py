@@ -73,7 +73,7 @@ def approximate_window_from_k(d_test_window, ax_to_plot=None, ax_phase=None, bas
     
     K = np.arange(alpha)
     L_ = np.arange(beta)
-    result_raw = np.zeros((alpha, beta), dtype=np.complex64)
+    result_raw = np.zeros((alpha, beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
@@ -102,7 +102,7 @@ def approximate_window_from_k(d_test_window, ax_to_plot=None, ax_phase=None, bas
         plt.colorbar(mesh_phase, ax=ax_phase)
         ax_phase.set_title("Phase des coefficients dans K")
     
-    reconstructed = np.zeros(L, dtype=np.complex64)
+    reconstructed = np.zeros(L, dtype=np.complex128)
     for k in K:
         for l in L_:
             reconstructed += result_raw[k, l] * chi[(k,l)]
@@ -128,7 +128,7 @@ def test_calculs(d_test_window, ax_to_plot=None, ax_phase=None, basis=None, fig=
     
     K = np.arange(alpha)
     L_ = np.arange(alpha_t - beta)
-    result_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex64)
+    result_raw = np.zeros((alpha, alpha_t - beta), dtype=np.complex128)
     
     for k in K:
         for l in L_:
@@ -157,7 +157,7 @@ def test_calculs(d_test_window, ax_to_plot=None, ax_phase=None, basis=None, fig=
         plt.colorbar(mesh_phase, ax=ax_phase, label='Phase [rad]')
         ax_phase.set_title("Phase des coefficients")
     
-    # reconstructed = np.zeros(L, dtype=np.complex64)
+    # reconstructed = np.zeros(L, dtype=np.complex128)
     # for k in K:
     #     for l in L_:
     #         reconstructed += result_raw[k, l] * basis[(k,l + beta)]
@@ -269,7 +269,7 @@ def build_by_hand_chi(d_window, k, n):
     # choice = 5
     # zak_gamma[:,alpha_t//q:] = choice
     
-    choices = np.zeros((alpha, alpha_t//q), np.complex64)
+    choices = np.zeros((alpha, alpha_t//q), np.complex128)
     # choices[::2,:] = 1
     # choices[1::2,:] = -1
     # for j in range(alpha):

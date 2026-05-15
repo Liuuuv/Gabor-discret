@@ -42,7 +42,7 @@ from base_import import*
 def ft(signal):
     L = len(signal) # nombre d'échantillons
     n = np.arange(L) # indices (somme sur n)
-    result = np.zeros(L, dtype=np.complex64)
+    result = np.zeros(L, dtype=np.complex128)
     for k in range(L):
         result[k] = np.sum(signal * np.exp(-2j * np.pi * k * n / L))
     return result
