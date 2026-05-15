@@ -332,7 +332,8 @@ if __name__ == "__main__":
     ##################### CUSTOM VARIABLES END #####################
     
     plot_window(d_window, ax=axes[0], label="Fenêtre (partie réelle/imag en bleu/rouge resp.)")
-    
+    # plot_window(compute_dual_window(d_window), ax=axes[1])
+    # plt.show()
         
     S = construct_operator_matrix(d_window, alpha=alpha, beta=beta)
     fig2, ax2 = plt.subplots(figsize=(8, 6))

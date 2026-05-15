@@ -1,20 +1,21 @@
 from config import*
 from tools import*
 
-def plot_window(window_, ax, is_discrete=True, label="", custom_y_lim=0.0):
+
+def plot_window(d_window, ax, is_discrete=True, label="", custom_y_lim=0.0):
     # if is_discrete:
     #     window = window_.copy()
     #     window[:L//2] = window_[L//2:]
     #     window[L//2:] = window_[:L//2]
     # else:
     #     window = window_
-    window = window_.copy()
-    window[:L//2] = window_[L//2:]
-    window[L//2:] = window_[:L//2]
+    window = d_window.copy()
+    window[:L//2] = d_window[L//2:]
+    window[L//2:] = d_window[:L//2]
     
     
-    ax.plot(np.linspace(-0.5,0.5,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
-    ax.plot(np.linspace(-0.5,0.5,L), np.imag(window), color='red', alpha=0.7, linewidth=1.0)
+    ax.plot(np.linspace(-duration/2,duration/2,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
+    ax.plot(np.linspace(-duration/2,duration/2,L), np.imag(window), color='red', alpha=0.7, linewidth=1.0)
     # ax.set_xlabel("Progression")
     # ax.set_ylabel("Amplitude")
     ax.grid(True, alpha=0.3)
@@ -28,6 +29,12 @@ def plot_window(window_, ax, is_discrete=True, label="", custom_y_lim=0.0):
 
 if __name__ == "__main__":
     
-    fig, axes = plt.subplots(6, 1, figsize=(14, 10)) ## changer 1er argument accordement
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10)) ## changer 1er argument accordement
     
-    plot_wi
+    plot_window((d_window), ax=axes[0])
+    # plot_window(discretize_window(gaussian(0.1)), ax=axes[0])
+    # plot_window(discretize_window(blackman_window(0.1)), ax=axes[1])
+    
+    
+    
+    plt.show()

@@ -24,9 +24,35 @@ def zak_transform_fast(d_window): ## BIEN? OUI MAIS CA MARCHE?
     return zak
 
 
+# def zak_transform(d_window, j, nu):
+#     if nu is np.ndarray:
+#         l = np.arange(alpha_t)                          # (alpha_t,)
+#         indices = (j - alpha * l) % L                   # (alpha_t,)
+#         window_vals = d_window[indices]                  # (alpha_t,)
+
+#         nu = np.atleast_1d(np.asarray(nu, dtype=float)) # (n,)
+#         exponents = np.exp(
+#             1j * (2 * np.pi / alpha_t) * nu[:, None] * l[None, :]
+#         )                                                # (n, alpha_t)
+
+#         result = np.sum(window_vals[None, :] * exponents, axis=1)  # (n,)
+        
+#         # retourner scalaire si nu était scalaire
+#         return result[0] if result.shape == (1,) else result
+#     else:
+#         l = np.arange(0, alpha_t)
+#         return np.sum(d_window[j - alpha * l] * np.exp(1j * (2*np.pi/alpha_t) * nu * l), dtype=np.complex128)
+    
 def zak_transform(d_window, j, nu):
-    l = np.arange(0, alpha_t)
-    return np.sum(d_window[j - alpha * l] * np.exp(1j * (2*np.pi/alpha_t) * nu * l), dtype=np.complex128)
+    l = np.arange(0, alpha_t)                        # (alpha_t,)
+    window_vals = d_window[(j - alpha * l) % L]      # (alpha_t,)
+    
+    nu = np.asarray(nu)
+    if nu.ndim == 0:  # scalaire
+        return np.sum(window_vals * np.exp(1j * (2*np.pi/alpha_t) * nu * l), dtype=np.complex128)
+    else:             # array (n,)
+        exponents = np.exp(1j * (2*np.pi/alpha_t) * nu[:, None] * l[None, :])  # (n, alpha_t)
+        return np.sum(window_vals[None, :] * exponents, axis=1, dtype=np.complex128)  # (n,)
 
 
 

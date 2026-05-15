@@ -114,7 +114,7 @@ def analyze_eigenvalues(window, sigma):
     
     # return eigvals, proj_g
 
-sigma_ = 0.3
+sigma_ = 0.1
 window_ = gaussian(sigma_)
 analyze_eigenvalues(window_, sigma_)
 

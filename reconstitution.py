@@ -11,6 +11,7 @@ from base_orth import build_xi
 
 from tools import*
 from config import*
+from base_import import*
 
 # min_time = 0.0
 # max_time = 1.0
@@ -255,7 +256,7 @@ if __name__ == "__main__":
 
     
     
-    plot_window(d_window=d_window, ax_index=4, label="Fenêtre")
+    plot_window(d_window=d_window, ax=axes[4], label="Fenêtre")
 
 
 
@@ -326,7 +327,7 @@ if __name__ == "__main__":
     # dual_window_vis = d_dual_window.copy()
     # dual_window_vis[:L//2] = d_dual_window[L//2:]
     # dual_window_vis[L//2:] = d_dual_window[:L//2]
-    plot_window(d_dual_window, ax_index=5, label="Fenêtre duale")
+    plot_window(d_dual_window, ax=axes[5], label="Fenêtre duale")
 
 
     ## plot grille alphaZ \times betaZ
@@ -350,7 +351,7 @@ if __name__ == "__main__":
     plt.tight_layout()
 
     # plt.savefig('plot.pdf', bbox_inches='tight')  # inutilisé
-    plt.savefig('signal_temporel.jpg', dpi=300)
+    plt.savefig('TERTrace/python/signal_temporel.jpg', dpi=300)
     plt.show()
     
     

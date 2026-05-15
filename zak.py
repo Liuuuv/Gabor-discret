@@ -132,7 +132,7 @@ def dual_dir_base_vec(k, n):
 #     ax.set_title(label)
 #     return result_raw
 
-def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None):
+def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None, smart:bool=False):
     if bars:
         return plot_zak_transform_bars(d_window, ax, label="")
     print("Plotting zak transform", label)
@@ -141,9 +141,14 @@ def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomp
     
     if zak_precomputed is None:
         result_raw = np.zeros((alpha, alpha_t), dtype=np.complex128)
-        for j in J:
-            for nu in NU:
-                result_raw[j, nu] = zak_transform(d_window, j, nu)
+        if smart and p==1:
+            for j in J:
+                for nu in NU:
+                    result_raw[j, nu] = np.sum(zak_transform(d_window, j, nu - beta * np.arange(q)))
+        else:
+            for j in J:
+                for nu in NU:
+                    result_raw[j, nu] = zak_transform(d_window, j, nu)
     else:
         result_raw = zak_precomputed.copy()
     
@@ -267,7 +272,7 @@ def A_p_eq_1(d_window, j, nu): ## à constante près, corriger
 
 if __name__ == "__main__":
     fig = plt.figure(figsize=(16, 10))
-    windows = (1,3) ## CHANGER ACCORDEMENT
+    windows = (1,1) ## CHANGER ACCORDEMENT
     
     # gs = fig.add_gridspec(4, 1, height_ratios=[2, 2, 2, 2])
     plt.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0.2, hspace=0.1)
@@ -278,74 +283,76 @@ if __name__ == "__main__":
     
     # d_window = compute_tight_frame(d_window)[1]
     
-    dual_window = compute_dual_window(d_window)
+    # dual_window = compute_dual_window(d_window)
     ax3d = fig.add_subplot(*windows, 1, projection='3d')
-    # zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False)
-    zak = plot_zak_transform(dual_window, ax3d, label="Fenêtre duale", bars=False)
+    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False, smart=True)
+    # zak = plot_zak_transform(dual_window, ax3d, label="Fenêtre duale", bars=False)
     # plot_A(d_window, ax3d)
     
+    print(f"min de zak {np.min(alpha * np.abs(zak)**2)}")
+    plt.show()
     
     
-    # xi = build_xi()
-    # test = np.zeros(L, dtype=np.complex64)
-    # for j in range(alpha):
-    #     for nu in range(alpha_t - beta):
-    #         t = nu/(alpha_t - beta)
-    #         t = (1-t) * np.pi/2 + t
-    #         t *= (alpha_t - beta)
-    #         # test += np.exp(2j * np.pi * t / alpha_t) * dual_dir_base_vec(j, 5)
-    #         test += np.exp(2j * np.pi * t / alpha_t) * xi[(j, beta+5)]
-    #         # test += np.exp(2j * np.pi * nu / alpha_t) * dual_dir_base_vec(j, 9)
-    # test = dual_dir_base_vec(0, 5)
-    
-    
-    
-    
-    
-    ax3d = fig.add_subplot(*windows, 2, projection='3d')
-    # dual_window = compute_dual_window(d_window)
-    alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
-    # plot_zak_transform(dual_window, ax3d, label="duale canonique")
-    plot_zak_transform(alternate_dual_window_orth, ax3d, label="\delta = 1")
-    # plot_zak_transform(test, ax3d, label="test")
+    # # xi = build_xi()
+    # # test = np.zeros(L, dtype=np.complex64)
+    # # for j in range(alpha):
+    # #     for nu in range(alpha_t - beta):
+    # #         t = nu/(alpha_t - beta)
+    # #         t = (1-t) * np.pi/2 + t
+    # #         t *= (alpha_t - beta)
+    # #         # test += np.exp(2j * np.pi * t / alpha_t) * dual_dir_base_vec(j, 5)
+    # #         test += np.exp(2j * np.pi * t / alpha_t) * xi[(j, beta+5)]
+    # #         # test += np.exp(2j * np.pi * nu / alpha_t) * dual_dir_base_vec(j, 9)
+    # # test = dual_dir_base_vec(0, 5)
     
     
     
     
-    ax3d = fig.add_subplot(*windows, 3, projection='3d')
-    # from methode_iterative import approximate_compact_support_iter
-    # approximate = approximate_compact_support_iter(0.1, 25)
-    # plot_zak_transform(approximate, ax3d, label="approximate")
     
-    zak_g = plot_zak_transform(d_window=d_window)
-    chi = build_chi(zak_g=zak_g, orthonormal=True)
-    plot_zak_transform(chi[(10,4)], ax3d, label="zak")
+    # ax3d = fig.add_subplot(*windows, 2, projection='3d')
+    # # dual_window = compute_dual_window(d_window)
+    # alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
+    # # plot_zak_transform(dual_window, ax3d, label="duale canonique")
+    # plot_zak_transform(alternate_dual_window_orth, ax3d, label="\delta = 1")
+    # # plot_zak_transform(test, ax3d, label="test")
+    
     
     
     
     # ax3d = fig.add_subplot(*windows, 3, projection='3d')
-    # dual_window = compute_dual_window(d_window)
-    alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
-    alternate_dual_window = dual_window + alternate_dual_window_orth
+    # # from methode_iterative import approximate_compact_support_iter
+    # # approximate = approximate_compact_support_iter(0.1, 25)
+    # # plot_zak_transform(approximate, ax3d, label="approximate")
     
-    # plot_zak_transform(alternate_dual_window_orth, ax3d, label="Duale dans K^\perp")
-    
-    
-    # ax3d = fig.add_subplot(*windows, 4, projection='3d')
-    # plot_zak_transform(alternate_dual_window, ax3d, label="duale non canonique")
+    # zak_g = plot_zak_transform(d_window=d_window)
+    # chi = build_chi(zak_g=zak_g, orthonormal=True)
+    # plot_zak_transform(chi[(10,4)], ax3d, label="zak")
     
     
-    fig, axes = plt.subplots(5, 1, figsize=(7, 5))
-    plot_window(d_window, axes[0], label="Fenêtre")
-    lim = max(np.min(np.abs(dual_window)), np.max(np.abs(dual_window)))
-    plot_window(dual_window, axes[1], label="canonical dual window", custom_y_lim=lim)
-    plot_window(alternate_dual_window, axes[2], label="alternate_dual_window",)
-    orth = compute_alternate_dual_window_orth(d_window)
-    plot_window(orth, axes[3], label="",)
-    # test = np.zeros(L, dtype=np.complex64)
-    # for j in range(alpha):
-    #     test += .01 * dual_dir_base_vec(j, 10)
-    # plot_window(test, axes[3], "orth",)
+    
+    # # ax3d = fig.add_subplot(*windows, 3, projection='3d')
+    # # dual_window = compute_dual_window(d_window)
+    # alternate_dual_window_orth = compute_alternate_dual_window_orth(d_window)
+    # alternate_dual_window = dual_window + alternate_dual_window_orth
+    
+    # # plot_zak_transform(alternate_dual_window_orth, ax3d, label="Duale dans K^\perp")
+    
+    
+    # # ax3d = fig.add_subplot(*windows, 4, projection='3d')
+    # # plot_zak_transform(alternate_dual_window, ax3d, label="duale non canonique")
+    
+    
+    # fig, axes = plt.subplots(5, 1, figsize=(7, 5))
+    # plot_window(d_window, axes[0], label="Fenêtre")
+    # lim = max(np.min(np.abs(dual_window)), np.max(np.abs(dual_window)))
+    # plot_window(dual_window, axes[1], label="canonical dual window", custom_y_lim=lim)
+    # plot_window(alternate_dual_window, axes[2], label="alternate_dual_window",)
+    # orth = compute_alternate_dual_window_orth(d_window)
+    # plot_window(orth, axes[3], label="",)
+    # # test = np.zeros(L, dtype=np.complex64)
+    # # for j in range(alpha):
+    # #     test += .01 * dual_dir_base_vec(j, 10)
+    # # plot_window(test, axes[3], "orth",)
     
     
     # plot_window(test, axes[4], label="test")

@@ -68,7 +68,7 @@ if __name__ == '__main__':
     plt.subplots_adjust(
         top=0.95,      # Espace au-dessus du premier graphique (1.0 = bord haut)
         bottom=0.05,   # Espace en-dessous du dernier graphique (0.0 = bord bas)
-        hspace=0.2     # Espace entre les graphiques
+        hspace=0.4     # Espace entre les graphiques
     )
     
     sf.write('TERTrace/python/fichier_entree.wav', signal, samplerate=sr)
@@ -78,12 +78,12 @@ if __name__ == '__main__':
     # produit_stdft()
     
     
-    stdft = plot_fstdft(signal=signal, ax=axes[1], plot_ref=False, linear=True, d_window=d_window, plot_only_grid=False, tolerance=0.01)
+    stdft = plot_fstdft(signal=signal, ax=axes[1], plot_ref=False, linear=True, d_window=d_window, plot_only_grid=False, tolerance=-1, show_full=False)
     
     # stdft[:500,:] = 0.0
     # stdft[:2000,:] = 0.0
     
-    plot_fstdft(signal=signal, ax=axes[1], plot_ref=False, linear=True, d_window=d_window, plot_only_grid=False, tolerance=0.01, stdft=stdft)
+    # plot_fstdft(signal=signal, ax=axes[1], plot_ref=False, linear=True, d_window=d_window, plot_only_grid=False, tolerance=0.01, stdft=stdft)
     
     canonical_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
     d_dual_window = canonical_dual_window

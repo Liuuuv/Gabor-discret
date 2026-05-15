@@ -23,59 +23,7 @@ class StudiedSignal(Enum):
 studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
 
 ############# WINDOWS #############
-def ind_zero(length: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de largeur donnée)
-    assert length > 0
-    
-    def ind(t_):
-        if type(t_) is np.ndarray:
-            t = t_.copy()
-            for i in range(len(t)):
-                t[i] = 1/np.sqrt(2*length) if abs(t[i]) <= length else 0
-            return t
-        else:
-            return 1/np.sqrt(2*length) if abs(t_) <= length else 0
-    return ind
-
-def gaussian(sigma: float): ## indicatrice normalisée centrée en zéro (sur l'ouvert de taille donnée)
-    assert sigma > 0
-    return lambda t: np.exp(-np.pi*(t/sigma)**2) * (2**0.25 * sigma)
-    # return lambda t: np.exp(-np.pi*(t/sigma)**2) * (2 ** 0.25 / (sigma ** 0.5))
-    # return lambda t: np.exp(-np.pi*(t/sigma)**2)
-
-def gaussian_comp_supp(sigma: float):
-    assert sigma > 0
-    
-    def fonction(t_):
-        if type(t_) is np.ndarray:
-            t = t_.copy()
-            for i in range(len(t)):
-                t[i] = np.exp(-1/(sigma/2-abs(t[i]))) if abs(t[i]) < sigma else 0
-            return t
-        else:
-            return np.exp(-1/(sigma/2-abs(t_))) if abs(t_) < sigma else 0
-    return fonction
-
-# def test_window(sigma: float):
-#     def function(t_):
-#         if type(t_) is np.ndarray:
-#             t = t_.copy()
-#             for i in range(len(t)):
-#                 temp = t[i]+0.5
-#                 if temp >= 0.5:
-#                     temp -= 1
-#                 t[i] = 1 * np.exp(-np.pi*(t[i]/sigma)**2) / sigma + 1j * np.exp(-np.pi*(temp/sigma)**2) / sigma
-#             return t
-#         else:
-#             temp = t_+0.5
-#             if temp >= 0.5:
-#                 temp -= 1
-#             return 1 * np.exp(-np.pi*(t_/sigma)**2) / sigma + 1j * np.exp(-np.pi*(temp/sigma)**2) / sigma
-#     return function
-
-def test_window(sigma: float):
-    # return lambda t: (np.exp(-np.pi*(t/sigma)**2) / sigma) * np.exp(2j * np.pi*(0.5*t/sigma)) ## gaussienne "tournante"
-    return lambda t: (np.exp(-np.pi*(t/sigma)**2) / sigma) * np.sin(2 * np.pi * t * 2) ** 2
-
+from windows import*
 ############# WINDOWS #############
 
 
@@ -115,6 +63,10 @@ match studied_signal:
         ## q=2
         alpha: int = 25
         beta: int = 10
+        
+        ## q=1
+        # alpha: int = 20
+        # beta: int = 25
 
         ## q=4
         # alpha: int = 25
@@ -128,11 +80,11 @@ match studied_signal:
         
         # signal, sr = librosa.load(chemin_fichier, sr=None)
         # signal, sr = librosa.load(chemin_fichier, sr=4000)
-        signal, sr = librosa.load(chemin_fichier, sr=2000)
+        signal, sr = librosa.load(chemin_fichier, sr=4000)
 
         
-        alpha: int = 5
-        beta: int = 10
+        alpha: int = 2000
+        beta: int = 2
 
 
 
@@ -179,8 +131,13 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
+
 sigma = 0.05
-window = gaussian(sigma) 
+window = gaussian(sigma)
+
+# l = 0.1
+# window = blackman_window(l)
+
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)
 # window = lambda t: window_(t) * np.sin(2 * np.pi * 100 * t)
