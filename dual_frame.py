@@ -178,7 +178,7 @@ def compute_dual_window_slow(window, alpha=alpha, beta=beta):
 def compute_dual_window(window, alpha=alpha, beta=beta):
     print("Calcul de la fenêtre duale canonique")
     
-    S = construct_operator_matrix(window=d_window)
+    S = construct_operator_matrix(window=window)
     
     S_circ = construct_circulant(S, mean=False)
     S_inv_circ = circulant_inverse(S_circ)
@@ -186,7 +186,7 @@ def compute_dual_window(window, alpha=alpha, beta=beta):
     
     # d_window = window(np.arange(L))
     
-    dual_window = np.matmul(S_inv, d_window)
+    dual_window = np.matmul(S_inv, window)
     return dual_window
 
 def compute_tight_frame(d_window, alpha=alpha, beta=beta, S=None):

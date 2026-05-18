@@ -8,7 +8,6 @@ min_time = 0.0
 max_time = 0.2
 duration = max_time - min_time
 
-# Charger le fichier MP3
 chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
 # signal, sr = librosa.load(chemin_fichier, sr=None)
 signal, sr = librosa.load(chemin_fichier, sr=4000)
@@ -97,7 +96,6 @@ def fft(signal):
       return combined
 
 
-# Afficher les informations du signal
 print(f"Fréquence d'échantillonnage : {sr} Hz")
 print(f"Durée : {len(signal)/sr:.2f} secondes")
 print(f"Nombre d'échantillons : {len(signal)}")

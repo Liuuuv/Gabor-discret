@@ -71,7 +71,7 @@ if __name__ == '__main__':
         hspace=0.4     # Espace entre les graphiques
     )
     
-    sf.write('TERTrace/python/fichier_entree.wav', signal, samplerate=sr)
+    sf.write('fichier_entree.wav', signal, samplerate=sr)
     
     plot_signal(signal=signal, ax=axes[0])
     
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     
     # plot_fstdft(signal=signal, ax=axes[1], plot_ref=False, linear=True, d_window=d_window, plot_only_grid=False, tolerance=0.01, stdft=stdft)
     
-    canonical_dual_window = compute_dual_window(window, alpha=alpha, beta=beta)
+    canonical_dual_window = compute_dual_window(d_window, alpha=alpha, beta=beta)
     d_dual_window = canonical_dual_window
     reconstructed_signal = reconstruct_signal(stdft, d_window, d_dual_window, alpha, beta)
 
@@ -97,12 +97,12 @@ if __name__ == '__main__':
 
     # Sauvegarder en WAV
     print("Sauvegarde...")
-    sf.write('TERTrace/python/fichier_sortie.wav', reconstructed_signal, samplerate=sr)
+    sf.write('fichier_sortie.wav', reconstructed_signal, samplerate=sr)
     
     plot_signal(signal=reconstructed_signal, ax=axes[2])
     plot_signal(signal=signal-reconstructed_signal, ax=axes[3], label="Erreur")
     
     
-    plt.savefig('TERTrace/python/ON_S_amuse.jpg', dpi=300)
+    plt.savefig('ON_S_amuse.jpg', dpi=300)
     # plt.get_current_fig_manager().window.state('zoomed')
     # plt.show()

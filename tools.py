@@ -191,25 +191,42 @@ def build_xi(zak_g=None):
     return xi
 
 def build_chi(zak_g=None, orthonormal=False):
-    assert q==2
+    assert p==1
     if zak_g is None:
         zak_g = zak_transform_fast(d_window)
     chi = {}
+    if q == 2:
+        for j_0 in range(alpha):
+            for n_0 in range(0, beta):
 
-    for j_0 in range(alpha):
-        for n_0 in range(0, beta):
 
+                vec = np.zeros(L, dtype=np.complex128)
 
-            vec = np.zeros(L, dtype=np.complex128)
+                for l in range(alpha_t):
+                    j = j_0 + l * alpha
 
-            for l in range(alpha_t):
-                j = j_0 + l * alpha
+                    c = zak_g[j_0, n_0 + beta] / zak_g[j_0, n_0]
 
-                c = zak_g[j_0, n_0 + beta] / zak_g[j_0, n_0]
+                    vec[j] = (1/alpha_t) * np.exp(2j * np.pi * l * n_0 / alpha_t) * (1+(-1)**l * c)
 
-                vec[j] = (1/alpha_t) * np.exp(2j * np.pi * l * n_0 / alpha_t) * (1+(-1)**l * c)
+                chi[(j_0, n_0)] = vec
+    else:
+        for j_0 in range(alpha):
+            for n_0 in range(0, beta):
+                vec = np.zeros(L, dtype=np.complex128)
 
-            chi[(j_0, n_0)] = vec
+                for l in range(alpha_t):
+                    j = j_0 + l * alpha
+
+                    the_sum = 0.0
+                    for mu in range(q):
+                        c = zak_g[j_0, n_0 + mu * beta] / zak_g[j_0, n_0]
+                        the_sum += c * np.exp(2j * np.pi * l * mu / q)
+                    
+
+                    vec[j] = (1/alpha_t) * np.exp(2j * np.pi * l * n_0 / alpha_t) * the_sum
+
+                chi[(j_0, n_0)] = vec
 
     if orthonormal:
         for j_0, n_0 in chi.keys():
@@ -218,15 +235,15 @@ def build_chi(zak_g=None, orthonormal=False):
     return chi
 
 
-def plot_fft(signal, ax, module_only = True, label="", ylog=False):
+def plot_fft(signal, ax, module_only = True, label="", ylog=False, tight_plot=True):
     print("Calcul de la FFT...")
-    freq = np.linspace(0, sr//2, len(signal)//2)
-    ft_signal = fft(signal)[:sr//2]
+    freq = np.linspace(0, len(signal)//2, len(signal)//2)
+    ft_signal = fft(signal)[:len(signal)//2]
     if module_only:
-        ax.plot(freq, np.abs(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
+        ax.plot(freq, np.abs(ft_signal), color='blue', alpha=0.7, linewidth=0.7)
     else:
-        ax.plot(freq, np.imag(ft_signal), color='red', alpha=0.7, linewidth=0.5)
-        ax.plot(freq, np.real(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
+        ax.plot(freq, np.imag(ft_signal), color='red', alpha=0.7, linewidth=0.7)
+        ax.plot(freq, np.real(ft_signal), color='blue', alpha=0.7, linewidth=0.7)
     # ax.set_xscale('log')
     if ylog:
         ax.set_yscale('log')
@@ -234,13 +251,14 @@ def plot_fft(signal, ax, module_only = True, label="", ylog=False):
         ax.set_title("FFT")
     else:
         ax.set_title(label)
-    ax.set_xlabel("Fréquence")
+    ax.set_xlabel("Fréquence (Hz)")
     ax.grid(True, alpha=0.3)
     if module_only:
         ax.set_ylabel("Module")
     else:
         ax.set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
-
+    if tight_plot:
+        ax.margins(0, x=None, y=None, tight=True)
 
 
 def approximate_window_from_dual_dir(d_test_window, ax_to_plot=None, ax_phase=None, basis=None, fig=None):

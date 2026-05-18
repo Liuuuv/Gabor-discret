@@ -2,7 +2,7 @@ from config import*
 from tools import*
 
 
-def plot_window(d_window, ax, is_discrete=True, label="", custom_y_lim=0.0):
+def plot_window(d_window, ax, is_discrete=True, label="", custom_y_lim=0.0, color=None):
     # if is_discrete:
     #     window = window_.copy()
     #     window[:L//2] = window_[L//2:]
@@ -13,8 +13,10 @@ def plot_window(d_window, ax, is_discrete=True, label="", custom_y_lim=0.0):
     window[:L//2] = d_window[L//2:]
     window[L//2:] = d_window[:L//2]
     
-    
-    ax.plot(np.linspace(-duration/2,duration/2,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
+    if color:
+        ax.plot(np.linspace(-duration/2,duration/2,L), np.real(window), color=color, alpha=0.7, linewidth=1.0)
+    else:
+        ax.plot(np.linspace(-duration/2,duration/2,L), np.real(window), color='blue', alpha=0.7, linewidth=1.0)
     ax.plot(np.linspace(-duration/2,duration/2,L), np.imag(window), color='red', alpha=0.7, linewidth=1.0)
     # ax.set_xlabel("Progression")
     # ax.set_ylabel("Amplitude")

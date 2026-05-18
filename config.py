@@ -19,8 +19,8 @@ class StudiedSignal(Enum):
 
 
 
-studied_signal: StudiedSignal = StudiedSignal.THEORETICAL_REF
-# studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
+# studied_signal: StudiedSignal = StudiedSignal.THEORETICAL_REF
+studied_signal: StudiedSignal = StudiedSignal.PRACTICAL_SIGNAL
 
 ############# WINDOWS #############
 from windows import*
@@ -38,8 +38,12 @@ match studied_signal:
         # min_time = 22.5
         # max_time = 25.5
         
-        min_time = 22.5
-        max_time = 24.5
+        # ter
+        # min_time = 22.5
+        # max_time = 24.5
+        
+        min_time = 19.0
+        max_time = 21.0
 
 
 
@@ -61,22 +65,22 @@ match studied_signal:
         # beta: int = 5
 
         ## q=2
-        alpha: int = 25
-        beta: int = 10
+        # alpha: int = 25
+        # beta: int = 10
         
         ## q=1
         # alpha: int = 20
         # beta: int = 25
 
         ## q=4
-        # alpha: int = 25
-        # beta: int = 5
+        alpha: int = 25
+        beta: int = 5
         
     case StudiedSignal.PRACTICAL_SIGNAL:
         # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
         # chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_sped_up.mp3"
         # chemin_fichier = "TERTrace/python/kawaki_wo_ameku_short_piano.mp3"
-        chemin_fichier = "TERTrace/python/kawaki_wo_ameku.wav"
+        chemin_fichier = "kawaki_wo_ameku.wav"
         
         # signal, sr = librosa.load(chemin_fichier, sr=None)
         # signal, sr = librosa.load(chemin_fichier, sr=4000)
@@ -84,8 +88,8 @@ match studied_signal:
         # signal, sr = librosa.load(chemin_fichier)
 
         
-        alpha: int = 2000
-        beta: int = 2
+        alpha: int = 100
+        beta: int = 10
 
 
 
@@ -133,11 +137,11 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
 
-sigma = 0.1
+sigma = 0.05
 window = gaussian(sigma)
 
-l = 0.1
-window = blackman_window(l)
+# l = 0.1
+# window = blackman_window(l)
 
 # window = gaussian_comp_supp(sigma)
 # window = test_window(sigma)

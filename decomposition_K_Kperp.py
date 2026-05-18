@@ -68,7 +68,7 @@ def approximate_window_from_k(d_test_window, ax_to_plot=None, ax_phase=None, bas
     #         basis = xi_
     #     else:
     #         basis = build_orthonormal_xi(zak_g, xi)
-    assert q==2
+    zak_g = zak_transform_fast(d_window)
     chi = build_chi(zak_g=zak_g, orthonormal=True)
     
     K = np.arange(alpha)
@@ -359,7 +359,8 @@ if __name__ == "__main__":
     
     
     # d_test_window = discretize_window(window=lambda t: np.exp(2j * np.pi * t * 5))
-    d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 5))
+    # d_test_window = discretize_window(window=lambda t: np.sin(2 * np.pi * t * 5))
+    # d_test_window = canonical_dual_window
     # d_test_window = discretize_window(window=lambda t: t-t + 1)
     # d_test_window = d_window
     

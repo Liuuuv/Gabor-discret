@@ -298,7 +298,7 @@ if __name__ == "__main__":
     
     # dual_window = compute_dual_window(d_window)
     ax3d = fig.add_subplot(*windows, 1, projection='3d')
-    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False, piecewise=True)
+    zak = plot_zak_transform(d_window, ax3d, label="Fenêtre", bars=False, piecewise=False)
     # zak = plot_zak_transform(dual_window, ax3d, label="Fenêtre duale", bars=False)
     # plot_A(d_window, ax3d)
     

@@ -11,7 +11,7 @@ from zak_tools import*
 from decomposition_K_Kperp import*
 
 
-cmap = plt.cm.bone  # Choix: 'plasma', 'inferno', 'jet', 'rainbow', etc.
+cmap = plt.cm.bone  # 'plasma', 'inferno', 'jet', 'rainbow'
 
 num_colors: int = 4
 

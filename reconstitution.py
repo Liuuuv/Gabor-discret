@@ -109,23 +109,23 @@ def plot_dft(signal, ax_index, module_only = False):
         axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
 
 
-def plot_fft(signal, ax_index, module_only = False):
-    print("Calcul de la FFT...")
-    freq = np.linspace(0, sr//2, len(signal)//2)
-    ft_signal = fft(signal)[:sr//2]
-    if module_only:
-        axes[ax_index].plot(freq, np.abs(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
-    else:
-        axes[ax_index].plot(freq, np.imag(ft_signal), color='red', alpha=0.7, linewidth=0.5)
-        axes[ax_index].plot(freq, np.real(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
-    axes[ax_index].set_xscale('log')
-    axes[ax_index].set_title("FFT")
-    axes[ax_index].set_xlabel("Fréquence")
-    axes[ax_index].grid(True, alpha=0.3)
-    if module_only:
-        axes[ax_index].set_ylabel("Module")
-    else:
-        axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
+# def plot_fft(signal, ax_index, module_only = False):
+#     print("Calcul de la FFT...")
+#     freq = np.linspace(0, sr//2, len(signal)//2)
+#     ft_signal = fft(signal)[:sr//2]
+#     if module_only:
+#         axes[ax_index].plot(freq, np.abs(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
+#     else:
+#         axes[ax_index].plot(freq, np.imag(ft_signal), color='red', alpha=0.7, linewidth=0.5)
+#         axes[ax_index].plot(freq, np.real(ft_signal), color='blue', alpha=0.7, linewidth=0.5)
+#     axes[ax_index].set_xscale('log')
+#     axes[ax_index].set_title("FFT")
+#     axes[ax_index].set_xlabel("Fréquence")
+#     axes[ax_index].grid(True, alpha=0.3)
+#     if module_only:
+#         axes[ax_index].set_ylabel("Module")
+#     else:
+#         axes[ax_index].set_ylabel("Partie réelle/imaginaire (bleu, rouge resp.)")
 
 
 
