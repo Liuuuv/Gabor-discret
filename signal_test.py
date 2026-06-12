@@ -30,6 +30,7 @@ def define_signal(dict: dict, N=200): ## N: num points
     return x
 
 signal_test = define_signal(test_frequencies, 500)
+# signal_test = define_signal(test_frequencies, 1500)
 
 
 

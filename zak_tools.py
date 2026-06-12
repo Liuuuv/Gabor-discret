@@ -7,11 +7,29 @@ from config import*
 
 
 
+def piecewise_scalar_zak_transform(d_window, alpha=alpha, beta=beta): ## p=1
+    """Piecewise Zak transform (only for p=1)"""
+    assert p == 1
+    zak_g = zak_transform_fast(d_window=d_window, alpha=alpha, beta=beta)
+    piecewise_zak = np.zeros_like(zak_g)
+    
+    ## VERSION NAIVE
+    # piecewise_zak = np.zeros_like(zak_g)
+    # for j in range(alpha):
+    #     for nu in range(alpha_t):
+    #         piecewise_zak[j, nu] = sum([np.abs(zak_g[j, nu - l * beta])**2 for l in range(q)])
+    # return piecewise_zak
+    
+    ## VERSION VECTORISEE
+    for l in range(q):
+        shifted = np.roll(np.abs(zak_g)**2, shift=-l * beta, axis=1)
+        piecewise_zak += shifted
+    
+    return piecewise_zak
 
 
-
-def zak_transform_fast(d_window): ## BIEN? OUI MAIS CA MARCHE?
-    """Version vectorisée de la transformée de Zak"""
+def zak_transform_fast(d_window, alpha=alpha, beta=beta):
+    """Version vectorisée de transformée de Zak"""
     L = len(d_window)
     alpha_t = L // alpha
     

@@ -5,7 +5,7 @@ import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from config import*
-from dual_frame import compute_dual_window, compute_tight_frame, construct_operator_matrix, plot_window
+from dual_frame import compute_dual_window
 from zak_tools import*
 from base_orth import build_xi
 from tools import*
@@ -132,7 +132,7 @@ def dual_dir_base_vec(k, n):
 #     ax.set_title(label)
 #     return result_raw
 
-def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None, piecewise:bool=False):
+def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomputed=None, piecewise:bool=False, squared:bool=False):
     """
 
     Args:
@@ -157,7 +157,7 @@ def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomp
         if piecewise and p==1:
             for j in J:
                 for nu in NU:
-                    result_raw[j, nu] = np.sum(zak_transform(d_window, j, nu - beta * np.arange(q)))
+                    result_raw[j, nu] = np.sum(np.abs(zak_transform(d_window, j, nu - beta * np.arange(q))) ** 2)
         else:
             for j in J:
                 for nu in NU:
@@ -173,6 +173,9 @@ def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomp
         
         # Module pour la hauteur
         Z = np.abs(result)
+        
+        if squared:
+            Z = Z ** 2
         
         # Phase pour la couleur
         phase = np.angle(result)
@@ -196,9 +199,10 @@ def plot_zak_transform(d_window=None, ax=None, label="", bars=False, zak_precomp
         ax.set_title(f"{label}")
         
         # Barre de couleur pour la phase
-        mappable = plt.cm.ScalarMappable(cmap=plt.cm.hsv)
-        mappable.set_array(phase)
-        plt.colorbar(mappable, ax=ax, label="Phase [rad]")
+        if not piecewise:
+            mappable = plt.cm.ScalarMappable(cmap=plt.cm.hsv)
+            mappable.set_array(phase)
+            plt.colorbar(mappable, ax=ax, label="Phase [rad]")
     
     return result_raw
 

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
+
 from dual_frame import compute_dual_window
 from zak import compute_alternate_dual_window, zak_transform, dual_dir_base_vec
 from base_orth import approximate_window_from_dual_dir

@@ -6,6 +6,7 @@ import scipy
 import time
 from signal_test import signal_test, plot_time_frequencies_reference
 from reconstitution import fft, fstdft, plot_fstdft
+
 from dual_frame import compute_dual_window
 from zak import compute_alternate_dual_window, zak_transform, zak_transform_fast, zak_inverse, plot_zak_transform
 from base_orth import approximate_window_from_dual_dir

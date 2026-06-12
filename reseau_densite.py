@@ -6,7 +6,8 @@ import scipy
 from signal_test import signal_test, plot_time_frequencies_reference
 from config import*
 from tools import*
-from dual_frame import compute_dual_window, compute_tight_frame, construct_operator_matrix, plot_window
+
+from dual_frame import compute_dual_window, construct_operator_matrix, plot_window
 from methode_iterative import approximate_compact_support_iter
 # from zak import plot_zak_transform, dual_dir_base_vec
 from zak_tools import*

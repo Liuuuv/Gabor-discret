@@ -13,7 +13,6 @@ from reconstitution import*
 if __name__ == '__main__':
     
     fig, axes = create_subplots((1,1)) ## changer 1er argument accordement
-    print(type(axes))
     if type(axes) != np.ndarray:
         axes = np.array([axes])
     # plt.subplots_adjust(hspace=1.5)

@@ -9,7 +9,19 @@ from zak_tools import*
 
 
 def create_subplots(shape: tuple, figsize:tuple=(14, 10)) -> tuple:
-    return plt.subplots(*shape, figsize=figsize)
+    """(rows, columns)
+
+    Args:
+        shape (tuple): _description_
+        figsize (tuple, optional): _description_. Defaults to (14, 10).
+
+    Returns:
+        tuple: _description_
+    """
+    fig, axes = plt.subplots(*shape, figsize=figsize)
+    if type(axes) != np.ndarray:
+        axes = np.array([axes])
+    return fig, axes
 
 def pos_mod(a, mod): ## inutile car les array le font très bien tout seul
     """positive modulo, a: int or a: np.ndarray
@@ -87,6 +99,11 @@ def fstdft(signal, d_window=None, only_grid:bool=False):
     indices = (np.arange(L)[None, :] - x_indices[:, None]) % L
     window_matrix = d_window[indices]  # (L, L)
     
+    if len(x_indices) == 0:
+        print("ERREUR: x_indices est vide!")
+        print(f"Vérification alpha={alpha}, L={L}")
+        raise ValueError("x_indices est vide")
+    
     # Multiplier signal par chaque fenêtre conjuguée, puis FFT sur chaque ligne
     windowed = signal[None, :] * np.conjugate(window_matrix)  # (L, L)
     result = np.fft.fft(windowed, axis=1)  # FFT sur chaque ligne
@@ -162,9 +179,9 @@ def plot_fstdft(signal, ax=None, plot_ref=True, label="", tolerance=-1, linear=F
     return result_raw
 
 def scalar_product(signal1, signal2):
-    return np.sum(np.conj(signal1) * signal2)
+    return np.sum(np.conj(signal1) * signal2, dtype=np.complex128)
 
-def build_xi(zak_g=None):
+def build_xi(zak_g=None, orthonormal=False):
     if zak_g is None:
         zak_g = zak_transform_fast(d_window)
     xi = {}
@@ -187,6 +204,10 @@ def build_xi(zak_g=None):
                 vec[j] = (term1 - term2) / alpha_t
 
             xi[(k, n)] = vec
+    
+    if orthonormal:
+        for j_0, n_0 in xi.keys():
+            xi[(j_0, n_0)] /= scalar_product(xi[(j_0, n_0)], xi[(j_0, n_0)]) ** 0.5
 
     return xi
 
@@ -358,4 +379,26 @@ def build_orthonormal_xi(Zg, xi):
 
     return basis
 
+# def create_subplots(size: tuple, figsize=(14, 10)):
+#     fig, axes = plt.create_subplots((1,1), figsize) ## changer 1er argument accordement
+#     if type(axes) != np.ndarray:
+#         axes = np.array([axes])
+#     return fig, axes
 
+def add_3d_subplot(fig, plot_shape, index):
+    ax3d = fig.add_subplot(*plot_shape, index, projection='3d')
+    # ax3d = fig.add_subplot(projection='3d')
+    return ax3d
+
+def time_shift(d_window, x:int):
+    new_window = np.zeros_like(d_window, dtype=np.complex128)
+    for j in range(len(d_window)):
+        new_window[j] = d_window[int((j - x) % L)]
+    return new_window
+
+def frequency_shift(d_window, xi:int):
+    new_window = np.zeros_like(d_window, dtype=np.complex128)
+    for j in range(len(d_window)):
+        real_j = L_sampling[j]
+        new_window[j] = d_window[j] * np.exp((1j * 2 * np.pi / L) * xi * real_j)
+    return new_window

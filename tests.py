@@ -11,60 +11,52 @@ from zak_tools import*
 from zak import*
 from decomposition_K_Kperp import*
 
-
+def xi_as_sum_of_gabor(g, k, n):
+    """
+    Exprime xi_{k,n} comme somme de M_nu T_k g.
+    """
+    L = len(g)
+    alpha_tilde = L // alpha
+    n0 = n % beta
+    
+    Zg = zak_transform_fast(g)
+    
+    # Zxi[k, nu] : deux pics
+    Zxi_k = np.zeros(alpha_tilde, dtype=complex)
+    c = Zg[k, n] / Zg[k, n0]
+    Zxi_k[n0] = -c
+    Zxi_k[n] = 1.0
+    
+    # FFT
+    hat_Zxi = np.fft.fft(Zxi_k)
+    hat_Zg = np.fft.fft(Zg[k, :])
+    
+    # Déconvolution
+    hat_a = hat_Zxi / hat_Zg
+    a = np.fft.ifft(hat_a)
+    
+    # Reconstruction
+    xi = np.zeros(L, dtype=complex)
+    t = np.arange(L)
+    for nu in range(alpha_tilde):
+        atom = np.roll(g, k)
+        atom *= np.exp(1j * 2 * np.pi * nu * t / L)
+        xi += a[nu] * atom
+    
+    return xi
 
 if __name__ == "__main__":
-    fig, axes = plt.subplots(6, 1, figsize=(14, 10))
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
     plt.subplots_adjust(top=0.95, bottom=0.15, hspace=0.4)
-
-    # plot_window(d_window=d_window, ax=axes[0])
-    canonical_dual_window = compute_dual_window(d_window)
-    # plot_window(d_window=canonical_dual_window, ax=axes[1])
-    # plot_window(d_window=compute_dual_window(canonical_dual_window), ax=axes[2])
     
-    approximate_window_from_k(d_window, ax_to_plot=axes[0], fig=fig, ax_phase=axes[1])
-    approximate_window_from_k(canonical_dual_window, ax_to_plot=axes[2], fig=fig, ax_phase=axes[3])
+    zak_g = zak_transform_fast(d_window=d_window)
+    xi = build_xi(zak_g)
     
+    k=2
+    n=15
     
-    zak_g = zak_transform_fast(d_window)
-    chi = build_chi(zak_g=zak_g, orthonormal=True)
-    K = np.arange(alpha)
-    L_ = np.arange(beta)
-    d_window_k = np.zeros((alpha, beta), dtype=np.complex128)
-    
-    for k in K:
-        for l in L_:
-            d_window_k[k, l] = scalar_product(chi[(k,l)], d_window)
-    
-    
-    
-    canonical_dual_window_k = np.zeros((alpha, beta), dtype=np.complex128)
-    
-    for k in K:
-        for l in L_:
-            canonical_dual_window_k[k, l] = scalar_product(chi[(k,l)], canonical_dual_window)
-    
-    ## module
-    test_k = d_window_k * np.conjugate(canonical_dual_window_k)
-    test_k = np.transpose(test_k)
-    test_k_module = np.abs(test_k)
-    test_k_module *= L
-    print(np.min(test_k_module), np.max(test_k_module))
-    K = np.arange(alpha)
-    L_ = np.arange(beta)
-    mesh = axes[4].pcolormesh(K, L_, test_k_module)
-    cbar = fig.colorbar(mesh, ax=axes[4])
-    
-    # phase
-    ax_phase = axes[5]
-    test_k_phase = test_k.copy()
-    mask = (np.abs(test_k_phase) < 10e-5) ## contrer les présupposées erreurs numériques
-    test_k_phase[mask] = np.nan
-    phase = np.angle(test_k_phase)
-    mesh_phase = ax_phase.pcolormesh(K, L_, phase, shading='auto', cmap='hsv', vmin=-np.pi, vmax=np.pi)
-    # plt.colorbar(mesh_phase, ax=ax_phase, label='Phase [rad]')
-    plt.colorbar(mesh_phase, ax=ax_phase)
-    ax_phase.set_title("Phase des coefficients dans K")
-    
+    plot_window(xi[(k,n)], ax=axes[0])
+     
+    plot_window(xi_as_sum_of_gabor(g=d_window, k=k, n=n), ax=axes[1])
 
     plt.show()

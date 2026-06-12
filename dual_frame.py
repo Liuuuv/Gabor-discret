@@ -14,22 +14,23 @@ from base_import import*
 
 
 def construct_operator_matrix(window, alt_window=None, alpha=alpha, beta=beta):
-    beta_t = L//beta
-    alpha_t = L//alpha
+    len_window = len(window)
+    beta_t = len_window//beta
+    alpha_t = len_window//alpha
     
     if alt_window is None:
         alt_window = window
     
-    matrix = np.zeros((L, L), dtype=np.complex128)
-    for j in range(L): ## lignes
+    matrix = np.zeros((len_window, len_window), dtype=np.complex128)
+    for j in range(len_window): ## lignes
         if j % beta_t == 0:
-            for d in range(L): ## déplacement
+            for d in range(len_window): ## déplacement
                 n = np.arange(alpha_t)
-                # matrix[int(j+d) % L, int(d) % L] = float(beta_t) * sum(
-                #     np.conjugate(window[(int(j+d) - alpha * n) % L]) * alt_window[(int(d) - alpha * n) % L]
+                # matrix[int(j+d) % len_window, int(d) % len_window] = float(beta_t) * sum(
+                #     np.conjugate(window[(int(j+d) - alpha * n) % len_window]) * alt_window[(int(d) - alpha * n) % len_window]
                 # )
-                matrix[int(j+d) % L, int(d) % L] = beta_t * np.sum(
-                    np.conjugate(window[(int(d) - alpha * n) % L]) * alt_window[(int(j+d) - alpha * n) % L],
+                matrix[int(j+d) % len_window, int(d) % len_window] = beta_t * np.sum(
+                    np.conjugate(window[(int(d) - alpha * n) % len_window]) * alt_window[(int(j+d) - alpha * n) % len_window],
                     dtype=np.complex128
                 )
                 
@@ -80,6 +81,8 @@ def construct_circulant(matrix, mean: bool = False): ## pour S walnut
     # return circ
     
     # return np.array(circ)
+    len_window = len(matrix[0])
+    alpha_t = len_window // alpha
     if not mean:
        return matrix[0:alpha].reshape(alpha, alpha_t, alpha).transpose(1, 0, 2).astype(np.complex128)
     else:
@@ -117,6 +120,11 @@ def circlulant_ift(C: np.ndarray):
 
 def circulant_inverse(C: np.ndarray):
     print("Calcul d'une circulante inverse")
+    len_window = len(C[0])
+    alpha_t = len_window // alpha
+    
+    print("shape circulant_inverse ", C.shape)
+    
     # inv = []
     # C_fourier = circlulant_ft(C)
     # for r in range(len(C)):
@@ -139,9 +147,10 @@ def circulant_inverse(C: np.ndarray):
     return B
 
 
-def construct_matrix_from_circulant(C: np.ndarray):
+def construct_matrix_from_circulant(C: np.ndarray, length = L):
     print("Reconstruction de la matrice depuis la circulante")
-    matrix = np.zeros((L, L), dtype=np.complex128)
+    alpha_t = length // alpha
+    matrix = np.zeros((length, length), dtype=np.complex128)
     for i in range(alpha_t):
         for j in range(alpha_t):
             # Le bloc (i,j) d'une matrice circulante par blocs est C[(j-i) % alpha_t]
@@ -149,15 +158,6 @@ def construct_matrix_from_circulant(C: np.ndarray):
     return matrix
 
 
-def shift(xs, n):
-    e = np.empty_like(xs)
-    if n >= 0:
-        e[:n] = np.nan
-        e[n:] = xs[:-n]
-    else:
-        e[n:] = np.nan
-        e[:n] = xs[-n:]
-    return e
 
 
 
@@ -179,17 +179,21 @@ def compute_dual_window(window, alpha=alpha, beta=beta):
     print("Calcul de la fenêtre duale canonique")
     
     S = construct_operator_matrix(window=window)
+    print("S shape", S.shape)
     
     S_circ = construct_circulant(S, mean=False)
+    print("shape S_circ ", S_circ.shape)
     S_inv_circ = circulant_inverse(S_circ)
-    S_inv = construct_matrix_from_circulant(S_inv_circ)
+    
+    len_window = len(window)
+    S_inv = construct_matrix_from_circulant(S_inv_circ, length=len_window)
     
     # d_window = window(np.arange(L))
     
     dual_window = np.matmul(S_inv, window)
     return dual_window
 
-def compute_tight_frame(d_window, alpha=alpha, beta=beta, S=None):
+def compute_tight_frame_slow(d_window, alpha=alpha, beta=beta, S=None):
     if S is None:
         S = construct_operator_matrix(d_window, alpha=alpha, beta=beta)
     
@@ -383,7 +387,7 @@ if __name__ == "__main__":
     # #     # plot_window(vec, ax=axes3[i], label=eigenvalues[i])
     
     
-    S_tight, d_window_mdemi = compute_tight_frame(d_window=d_window, alpha=alpha, beta=beta, S=S)
+    S_tight, d_window_mdemi = compute_tight_frame_slow(d_window=d_window, alpha=alpha, beta=beta, S=S)
     plot_window(d_window_mdemi, ax=axes[2], label="Fenêtre serrée canonique")
     # fig2, ax2 = plt.subplots(figsize=(8, 6))
     # im = ax2.imshow(np.abs(S_tight), cmap='viridis', aspect='auto')

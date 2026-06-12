@@ -42,8 +42,14 @@ match studied_signal:
         # min_time = 22.5
         # max_time = 24.5
         
-        min_time = 19.0
-        max_time = 21.0
+        # min_time = 19.0
+        # max_time = 21.0
+        
+        # min_time = 22.5
+        # max_time = 26.5
+        
+        min_time = 22.5
+        max_time = 32.5
 
 
 
@@ -68,13 +74,24 @@ match studied_signal:
         # alpha: int = 25
         # beta: int = 10
         
+        ## q=2 wilson 500
+        alpha: int = 250
+        beta: int = 1
+        
+        ## q=2 wilson 1500
+        # alpha: int = 750
+        # beta: int = 1
+        
+        # alpha: int = 125
+        # beta: int = 2
+        
         ## q=1
         # alpha: int = 20
         # beta: int = 25
 
         ## q=4
-        alpha: int = 25
-        beta: int = 5
+        # alpha: int = 25
+        # beta: int = 5
         
     case StudiedSignal.PRACTICAL_SIGNAL:
         # chemin_fichier = "TERTrace/python/bad_apple_loop.mp3"
@@ -84,12 +101,17 @@ match studied_signal:
         
         # signal, sr = librosa.load(chemin_fichier, sr=None)
         # signal, sr = librosa.load(chemin_fichier, sr=4000)
-        signal, sr = librosa.load(chemin_fichier, sr=4000)
+        # signal, sr = librosa.load(chemin_fichier, sr=4000)
+        signal, sr = librosa.load(chemin_fichier, sr=24000)
+        # signal, sr = librosa.load(chemin_fichier, sr=24000)
         # signal, sr = librosa.load(chemin_fichier)
 
         
-        alpha: int = 100
-        beta: int = 10
+        # alpha: int = 100
+        # beta: int = 10
+        
+        alpha: int = 5
+        beta: int = 5
 
 
 
@@ -117,12 +139,19 @@ alpha_t = L//alpha
 
 
 ################ BEGIN TOOLS #################
-def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
-    if normalize:
-        return window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
-        # return window(L_sampling/L) # il faut plot [0,1]
+def discretize_window(window: callable, length=L): ## takes a function and discretizes it into a L-array
+    # if normalize:
+    #     return window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
+    #     # return window(L_sampling/L) # il faut plot [0,1]
+    # else:
+    #     return window(L_sampling/length)
+    if length == L:
+        return window(L_sampling/L)
     else:
-        return window(L_sampling/length)
+        custom_L_sampling = np.arange(0, length, dtype=np.complex128)
+        custom_L_sampling[length//2:] = np.arange(-length//2, 0, dtype=np.complex128)
+        return window(custom_L_sampling/length)
+        
 
 # def discretize_window(window: callable, normalize=False, length=L): ## takes a function and discretizes it into a L-array
 #     discretized_window = window(np.linspace(-0.5, 0.5, length, dtype=np.complex128))
@@ -137,7 +166,7 @@ def discretize_window(window: callable, normalize=False, length=L): ## takes a f
 # window = ind_zero(0.05)
 # sigma = 0.1999999955
 
-sigma = 0.05
+sigma = 0.1
 window = gaussian(sigma)
 
 # l = 0.1
@@ -147,6 +176,7 @@ window = gaussian(sigma)
 # window = test_window(sigma)
 # window = lambda t: window_(t) * np.sin(2 * np.pi * 100 * t)
 d_window = discretize_window(window)
+
 
 ######## BEGIN VERIFICATIONS ########
 print()
@@ -176,7 +206,6 @@ print(f"alpha*beta / L = {p}/{q}")
 print("--------- END VERIFICATIONS config.py -----------")
 print()
 ######## END VERIFICATIONS ##########
-
 
 
 if __name__ == "__main__":
